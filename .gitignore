@@ -1,0 +1,4 @@
+# Настройки и сохранения Obsidian
+data.json
+.obsidian/
+.DS_Store

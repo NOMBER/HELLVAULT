@@ -1,0 +1,9 @@
+{
+  "id": "vault-shards",
+  "name": "HELLVAULT",
+  "version": "2.0.1",
+  "minAppVersion": "1.4.0",
+  "description": "Doom-подобная игра в Obsidian: история, линейный путь и бесконечная арена.",
+  "author": "Хранитель",
+  "isDesktopOnly": true
+}
