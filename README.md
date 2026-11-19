@@ -1,70 +1,78 @@
+<p align="center"><b>English</b> · <a href="README.ru.md">Русский</a></p>
+
 <p align="center">
-  <img src="docs/images/hellvault-cover.png" alt="HELLVAULT — пиксельная иллюстрация с чудовищами Хранилища" width="100%">
+  <img src="docs/images/hellvault-cover.png" alt="HELLVAULT pixel-art illustration with creatures from the Vault" width="100%">
 </p>
 
 <h1 align="center">HELLVAULT</h1>
 
 <p align="center">
-  <b>Doom-подобный шутер прямо внутри Obsidian.</b><br>
-  Заметки стали монстрами. Ссылки ведут во тьму. Хранилище ждёт своего Хранителя.
+  <b>A Doom-like shooter inside Obsidian.</b><br>
+  Notes have become monsters. Links lead into darkness. The Vault needs its Keeper.
 </p>
 
-<p align="center">◆ Пиксельная графика &nbsp;·&nbsp; Три режима &nbsp;·&nbsp; Только для десктопного Obsidian ◆</p>
+<p align="center">◆ Pixel art &nbsp;·&nbsp; Three modes &nbsp;·&nbsp; Obsidian desktop only ◆</p>
 
 ---
 
-Порча разорвала связи между заметками и добралась до самого Ядра. Вооружись Пером, найди осколки обсидиана и останови **Пустую Заметку**, пока всё Хранилище не превратилось в чистый лист.
+Corruption has severed the connections between notes and reached the Core. Take up your Quill, find the obsidian shards, and stop the **Blank Note** before the Vault becomes a clean page.
 
-## 🎮 Три способа играть
+## 🎮 Three ways to play
 
-![Иллюстрация игровых миров: архив, путь и арена](docs/images/hellvault-modes.png)
+![Illustration of the Archive, the path, and the arena](docs/images/hellvault-modes.png)
 
-- **📖 История** — исследуй пять зон, собирай семь осколков, открывай печати и пробивайся к финальному боссу. По пути ищи тайники и страницы дневника.
-- **⚔️ Линейный путь** — двигайся вперёд, отбивайся от появляющихся врагов и победи босса в конце маршрута. Искать осколки здесь не придётся.
-- **♾️ Бесконечная арена** — переживай волны, разбивай ящики с припасами и выбирай улучшение после каждой волны. Каждая пятая встречает тебя боссом, а лучший результат попадает в таблицу рекордов.
+- **📖 Story** — explore five zones, collect seven shards, break the seals, and fight your way to the final boss. Search for secrets and diary pages along the way.
+- **⚔️ Linear Path** — keep moving, fight off enemies that spawn over time, and defeat the boss at the end. No shards to hunt for here.
+- **♾️ Endless Arena** — survive waves, smash supply crates, and choose an upgrade after each wave. A boss arrives every fifth wave, and your best runs make the records table.
 
-> Арена откроется после первого прохождения истории на любой сложности. У каждого режима — своё сохранение.
+> The arena unlocks after your first story victory on any difficulty. Each mode has its own save.
 
-## ✨ Что внутри
+## ✨ Features
 
-- **Три вида оружия:** Перо с бесконечными чернилами, Wikilink-дробовик и Граф-лазер.
-- **Знакомые враги:** Сироты, Битые ссылки, Дубликаты, Спам-теги и Пустая Заметка.
-- **Три сложности:** от лёгкой до харда, где у Хранителя всего **1 HP**.
-- **Исследование и коллекция:** тайники, Кодекс, 12 страниц дневника и 21 достижение.
-- **Хранилище становится частью игры:** некоторые враги и надгробия получают названия твоих заметок. Ненужные папки можно исключить в настройках или отключить эту функцию.
+- **Three weapons:** the Quill with unlimited ink, the Wikilink Shotgun, and the Graph Laser.
+- **Familiar enemies:** Orphans, Broken Links, Duplicates, Spam Tags, and the Blank Note.
+- **Three difficulties:** from Easy to Hard, where the Keeper has just **1 HP**.
+- **Explore and collect:** secrets, a Codex, 12 diary pages, and 21 achievements.
+- **Your vault becomes part of the game:** some enemies and gravestones use the names of your notes. Exclude folders in the settings or turn this feature off.
 
-## 📸 Как выглядит игра
+## 📸 In-game
 
-| Архив | Битва на арене |
+| The Archive | Arena boss fight |
 |:---:|:---:|
-| ![Игровой кадр: бой в архиве](docs/images/story.png) | ![Игровой кадр: босс и ящики на арене](docs/images/arena.png) |
+| ![Gameplay: fighting in the Archive](docs/images/story-en.png) | ![Gameplay: a boss and crates in the arena](docs/images/arena-en.png) |
 
-*Игровые кадры сняты в тестовом окружении. Обложка и иллюстрация режимов созданы по мотивам графики игры.*
+*Gameplay images were captured in a test environment. The cover and mode illustration are inspired by the game's artwork.*
 
-## 🚀 Установка
+## 🚀 Installation
 
-Нужен **Obsidian 1.4.0 или новее** на компьютере.
+Requires **Obsidian 1.4.0 or newer** on a desktop computer.
 
-1. [Скачай архив проекта](https://github.com/NOMBER/HELLVAULT/archive/refs/heads/main.zip) и распакуй его.
-2. Создай папку `<хранилище>/.obsidian/plugins/vault-shards/` и скопируй в неё из архива `main.js`, `manifest.json` и `styles.css`.
-3. В Obsidian открой **Настройки → Сторонние плагины**, обнови список и включи **HELLVAULT**.
-4. Запусти игру значком кристалла или командой **«Открыть HELLVAULT»**.
+1. [Download the plugin archive from the latest release](https://github.com/NOMBER/HELLVAULT/releases/latest) and extract it.
+2. Create `<your vault>/.obsidian/plugins/vault-shards/` and copy `main.js`, `manifest.json`, and `styles.css` into it.
+3. In Obsidian, open **Settings → Community plugins**, refresh the list, and enable **HELLVAULT**.
+4. Launch the game with the crystal icon or the **Open HELLVAULT** command.
 
-При обновлении сохрани существующий `data.json`: в нём находятся прогресс, настройки и рекорды. Не переименовывай папку `vault-shards` — так сохраняется совместимость с прежней версией.
+When updating, keep your existing `data.json`: it contains your progress, settings, and records. Keep the `vault-shards` folder name for compatibility with earlier versions.
 
-## ⌨️ Управление
+**Language / Язык:** switch between English and Russian in the game settings or the plugin settings. New installations start in English; existing saves keep Russian.
 
-| Клавиши | Действие |
+## ⌨️ Controls
+
+| Keys | Action |
 |---|---|
-| **W A S D / ↑ ↓** | движение |
-| **Мышь / ← →** | обзор и поворот |
-| **ЛКМ / Пробел** | выстрел |
-| **1–3 / колесо / Q** | смена оружия |
-| **Shift** | бег |
-| **E / F** | осмотреть стену или открыть тайник |
-| **M / Tab** | карта |
-| **Esc** | пауза и меню |
+| **W A S D / ↑ ↓** | move |
+| **Mouse / ← →** | look and turn |
+| **Left click / Space** | fire |
+| **1–3 / wheel / Q** | change weapon |
+| **Shift** | run |
+| **E / F** | inspect a wall or open a secret |
+| **M / Tab** | map |
+| **Esc** | pause and menu |
 
-<p align="center"><b>Твоё Хранилище ещё можно спасти. ◆</b></p>
+The repository contains the bundled plugin code in `main.js`. Run the localization checks with `node --test tests/localization.test.js`.
 
-<p align="center">Лицензия: <a href="LICENSE">MIT</a></p>
+<p align="center"><b>Your Vault can still be saved. ◆</b></p>
+
+<p align="center">License: <a href="LICENSE">MIT</a></p>
+
+<p align="center"><a href="https://nomberobsidian.github.io">🌐 Author's website</a> &nbsp;·&nbsp; <a href="https://donatre.github.io">💜 Support the project</a></p>

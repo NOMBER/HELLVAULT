@@ -1284,22 +1284,22 @@ var FALLBACK_NAMES = [
 function buildLoreMarkdown(unlocked, achievements) {
   const set = /* @__PURE__ */ new Set([...ALWAYS_LORE, ...unlocked]);
   const lines = [];
-  lines.push("# HELLVAULT — Кодекс", "");
-  lines.push(`> Экспорт из игры «HELLVAULT». Открыто записей: ${LORE.filter((l) => set.has(l.id)).length}/${LORE.length}.`, "");
+  lines.push(tr("# HELLVAULT — Кодекс"), "");
+  lines.push(tr`> Экспорт из игры «HELLVAULT». Открыто записей: ${LORE.filter((l) => set.has(l.id)).length}/${LORE.length}.`, "");
   for (const c of LORE_CATS) {
     lines.push(`## ${c.title}`, "");
     for (const l of LORE.filter((x) => x.cat === c.id)) {
       if (set.has(l.id)) {
         lines.push(`### ${l.title}`, "", l.text, "");
       } else {
-        lines.push(`### ???`, "", `*\u041D\u0435 \u043E\u0442\u043A\u0440\u044B\u0442\u043E. \u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430: ${l.hint}*`, "");
+        lines.push(`### ???`, "", tr`*\u041D\u0435 \u043E\u0442\u043A\u0440\u044B\u0442\u043E. \u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430: ${l.hint}*`, "");
       }
     }
   }
-  lines.push("## \u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F", "");
+  lines.push(tr("## \u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F"), "");
   for (const a of ACHIEVEMENTS) {
     const t = achievements[a.id];
-    lines.push(`- [${t ? "x" : " "}] **${a.title}** \u2014 ${a.desc}${t ? ` (${new Date(t).toLocaleDateString("ru-RU")})` : ""}`);
+    lines.push(`- [${t ? "x" : " "}] **${a.title}** \u2014 ${a.desc}${t ? ` (${new Date(t).toLocaleDateString(gameLocale())})` : ""}`);
   }
   lines.push("");
   return lines.join("\n");
@@ -1321,6 +1321,268 @@ var WEAPONS = [
   { name: "Wikilink-\u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A", dmg: 10, cd: 0.85, pellets: 7, spread: 0.11, ammo: "shells", sfx: "shotgun" },
   { name: "\u0413\u0440\u0430\u0444-\u043B\u0430\u0437\u0435\u0440", dmg: 10, cd: 0.1, pellets: 1, spread: 6e-3, ammo: "energy", sfx: "laser" }
 ];
+// UI and narrative localization. IDs and save data remain language-independent.
+var GAME_LANGUAGE = "ru";
+var EN_RUNTIME = {
+  "# HELLVAULT — Кодекс": "# HELLVAULT — Codex",
+  "> Экспорт из игры «HELLVAULT». Открыто записей: {0}/{1}.": "> Exported from HELLVAULT. Entries unlocked: {0}/{1}.",
+  "*Не открыто. Подсказка: {0}*": "*Locked. Hint: {0}*",
+  "## Достижения": "## Achievements",
+  "Ящик разбит: припасы!": "Crate smashed: supplies!",
+  "Впереди Пустая Заметка!": "The Blank Note lies ahead!",
+  "БОСС · волна {0}": "BOSS · wave {0}",
+  "Волна {0}": "Wave {0}",
+  "Пустая Заметка пробуждается…": "The Blank Note awakens…",
+  "Печать снята: путь в «{0}» открыт": "Seal broken: the path to {0} is open",
+  "Запечатано. Нужно осколков: {0} (у вас {1})": "Sealed. Shards required: {0} (you have {1})",
+  "Найден тайник! ({0}/3)": "Secret found! ({0}/3)",
+  "Здесь трещина… [E] — осмотреть": "A crack in the wall… [E] — inspect",
+  "Надгробие: «{0}» — удалена, не прочитана": "Gravestone: “{0}” — deleted unread",
+  "Нет скобок [[ ]] для дробовика": "No [[ ]] brackets for the shotgun",
+  "Нет энергии для лазера": "No energy for the laser",
+  "Дубликат распался на две Копии!": "The Duplicate split into two Copies!",
+  "Босс повержен!": "Boss defeated!",
+  "Пустая Заметка повержена! Подберите последний осколок.": "The Blank Note is defeated! Pick up the final shard.",
+  "Восстановлено из резервной копии": "Restored from backup",
+  "+{0} HP — чистая заметка": "+{0} HP — clean note",
+  "+6 скобок [[ ]]": "+6 [[ ]] brackets",
+  "+60 энергии графа": "+60 graph energy",
+  "Получен Wikilink-дробовик! [2]": "Wikilink Shotgun acquired! [2]",
+  "Получен Граф-лазер! [3]": "Graph Laser acquired! [3]",
+  "Страница дневника: «{0}» — читать в Кодексе (Esc)": "Diary page: “{0}” — read it in the Codex (Esc)",
+  "Кодекс: новая страница": "Codex: new page",
+  "Осколок обсидиана! {0}/7": "Obsidian shard! {0}/7",
+  "Пустая Заметка призывает забытые заметки!": "The Blank Note summons forgotten notes!",
+  "Достижение: ": "Achievement: ",
+  "Кодекс: новая запись": "Codex: new entry",
+  "ЗАМЕТКА ПОВРЕЖДЕНА": "NOTE CORRUPTED",
+  "Забег завершён…": "Run over…",
+  "Восстановление из резервной копии…": "Restoring from backup…",
+  "ВОЛНА {0}": "WAVE {0}",
+  "К БОССУ ↑": "TO THE BOSS ↑",
+  "Арена": "Arena",
+  "Путь": "Path",
+  "{0} · {1} · убито {2}": "{0} · {1} · kills {2}",
+  "ПУСТАЯ ЗАМЕТКА": "THE BLANK NOTE",
+  "КАРТА · ◆ {0}/7": "MAP · ◆ {0}/7",
+  "АРЕНА · ВОЛНА {0}": "ARENA · WAVE {0}",
+  "ЛИНЕЙНЫЙ ПУТЬ": "LINEAR PATH",
+  "{0} · M — закрыть": "{0} · M — close",
+  "● осколок": "● shard",
+  "● страница": "● page",
+  "● оружие": "● weapon",
+  "■ дверь": "■ door",
+  "● ты": "● you",
+  "◆ ИГРА ВНУТРИ OBSIDIAN ◆": "◆ A GAME INSIDE OBSIDIAN ◆",
+  "Победа": "Victory",
+  "Игра": "Game",
+  "Достижения": "Achievements",
+  "Кодекс": "Codex",
+  "Рекорды": "Records",
+  "Управление": "Controls",
+  "Настройки": "Settings",
+  "Выберите режим. Забеги сохраняются отдельно; сложность выбирается в настройках и фиксируется при начале забега.": "Choose a mode. Each has its own save; difficulty is set when a new run begins.",
+  "📖 История · 7 глав": "📖 Story · 7 chapters",
+  "Прежний сюжет: найдите семь осколков и восстановите Хранилище.": "Explore the Vault, find seven shards, and restore it.",
+  "⚔ Линейный путь": "⚔ Linear Path",
+  "Идите вперёд по извилистому пути, отражайте постоянно появляющихся врагов и победите босса.": "Fight along a winding path as enemies keep spawning, then defeat the boss.",
+  "∞ Бесконечная арена": "∞ Endless Arena",
+  "Волны, разрушаемые ящики, улучшения после каждой волны и босс каждые пять волн.": "Waves, breakable crates, an upgrade after every wave, and a boss every five waves.",
+  "🔒 Пройдите историю": "🔒 Complete the story",
+  "Откроется после первой победы в истории на любой сложности.": "Unlocks after completing the story once on any difficulty.",
+  "▶ Продолжить": "▶ Continue",
+  "Глава {0}/7 · осколков {1}/7": "Chapter {0}/7 · shards {1}/7",
+  "Забег сохранён": "Run saved",
+  "Точно начать заново?": "Start over for sure?",
+  "Начать заново": "Start over",
+  "▶ Начать": "▶ Start",
+  "🏆 Достижения: {0}/{1}": "🏆 Achievements: {0}/{1}",
+  "📖 Кодекс: {0}/{1}": "📖 Codex: {0}/{1}",
+  "лёгкий": "easy",
+  "средний": "normal",
+  "хард · 1 HP": "hard · 1 HP",
+  "хард": "hard",
+  "Следующий забег: {0}": "Next run: {0}",
+  "Текущий забег: {0}.": "Current run: {0}.",
+  "ВОЛНА {0} ПРОЙДЕНА": "WAVE {0} COMPLETE",
+  "Выберите одно улучшение. После выбора начнётся следующая волна.": "Choose one upgrade. The next wave starts after your choice.",
+  "⚔ Урон +25% (сейчас {0}%)": "⚔ Damage +25% (currently {0}%)",
+  "➜ Скорость +10% (сейчас {0}%)": "➜ Speed +10% (currently {0}%)",
+  "✦ Оружие и боеприпасы": "✦ Weapons and ammunition",
+  "✦ Оружие, боеприпасы и +35 HP": "✦ Weapons, ammunition, and +35 HP",
+  "РЕКОРДЫ АРЕНЫ": "ARENA RECORDS",
+  "Сначала учитываются пройденные волны, затем количество убитых врагов. Таблица хранится в этом хранилище.": "Ranked by waves completed, then enemies defeated. Records are stored in this vault.",
+  "Пока нет завершённых забегов.": "No completed runs yet.",
+  "Волны": "Waves",
+  "Убито": "Kills",
+  "Время": "Time",
+  "Сложность": "Difficulty",
+  "Дата": "Date",
+  "Лёгкая": "Easy",
+  "Средняя": "Normal",
+  "Хард": "Hard",
+  "ЗАБЕГ ЗАВЕРШЁН": "RUN OVER",
+  "Пройдено волн: {0}. Убито врагов: {1}. Результат сохранён в таблице рекордов.": "Waves completed: {0}. Enemies defeated: {1}. Your result was added to the records.",
+  "Главное меню": "Main menu",
+  "Новый забег": "New run",
+  "ПУТЬ ПРОЙДЕН": "PATH COMPLETE",
+  "Босс повержен за {0}. Удалено врагов: {1}.": "Boss defeated in {0}. Enemies defeated: {1}.",
+  "Пройти ещё раз": "Play again",
+  "ХРАНИЛИЩЕ ВОССТАНОВЛЕНО": "THE VAULT IS RESTORED",
+  "Седьмой осколок встал на место. Граф вспыхнул от края до края, а Пустая Заметка стала просто чистым листом — местом для новой мысли.": "The seventh shard is back in place. The graph lights up from end to end, and the Blank Note becomes a clean page: a place for a new thought.",
+  "⏱ Время: {0}": "⏱ Time: {0}",
+  "☠ Удалено: {0}": "☠ Defeated: {0}",
+  "↺ Гибелей: {0}": "↺ Deaths: {0}",
+  "? Тайники: {0}/3": "? Secrets: {0}/3",
+  "❡ Страниц: {0}/12": "❡ Pages: {0}/12",
+  "▶ Исследовать дальше": "▶ Keep exploring",
+  "Читать эпилог": "Read the epilogue",
+  "Новая игра": "New game",
+  "Режимы и арена": "Modes and arena",
+  "Открыто {0} из {1}": "Unlocked {0} of {1}",
+  "✓ Открыто ": "✓ Unlocked ",
+  "??? — не найдено": "??? — not found",
+  "Запись ещё не открыта. Подсказка: ": "Entry still locked. Hint: ",
+  "⇩ Экспортировать Кодекс в заметку": "⇩ Export Codex to a note",
+  "Кодекс экспортирован": "Codex exported",
+  "Заметка создана в хранилище": "Note created in the vault",
+  "Не удалось экспортировать": "Export failed",
+  "движение": "move",
+  "поворот (без мыши)": "turn without the mouse",
+  "Мышь": "Mouse",
+  "обзор — кликните по экрану для захвата": "look around — click the screen to capture the pointer",
+  "ЛКМ / Пробел": "Left click / Space",
+  "выстрел": "fire",
+  "1 · 2 · 3 / колесо / Q": "1 · 2 · 3 / wheel / Q",
+  "смена оружия": "change weapon",
+  "бег": "run",
+  "осмотреть стену, открыть тайник": "inspect a wall or open a secret",
+  "карта Хранилища": "Vault map",
+  "пауза и меню": "pause and menu",
+  "Арсенал": "Arsenal",
+  "✒ Перо — бесконечные чернила, двойной урон вплотную.": "✒ Quill — unlimited ink, double damage at close range.",
+  "[[ ]] Wikilink-дробовик — 7 скобок-дробин, мощно вблизи. Лежит где-то в Архиве.": "[[ ]] Wikilink Shotgun — seven bracket pellets, powerful up close. Found in the Archive.",
+  "⚡ Граф-лазер — скорострельный луч энергии. Спрятан в Саду Заметок.": "⚡ Graph Laser — a rapid-fire energy beam. Hidden in the Garden of Notes.",
+  "Печати": "Seals",
+  "Двери между зонами открываются, когда у вас достаточно осколков: 1 → Сад, 3 → Граф, 5 → Битые ссылки, 6 → Ядро. Седьмой осколок — у Пустой Заметки.": "Zone doors open when you have enough shards: 1 → Garden, 3 → Graph, 5 → Broken Links, 6 → Core. The Blank Note has the seventh shard.",
+  "Звук": "Sound",
+  "Громкость": "Volume",
+  "Чувствительность мыши": "Mouse sensitivity",
+  "Сложность следующего забега": "Difficulty for the next run",
+  "Хард · 1 HP": "Hard · 1 HP",
+  "Разрешение рендера": "Render resolution",
+  "25% — максимально быстро": "25% — fastest",
+  "50% — по умолчанию": "50% — default",
+  "100% — чётко": "100% — sharp",
+  "Имена заметок из хранилища": "Use note names from the vault",
+  "Показывать FPS": "Show FPS",
+  "Эти же настройки доступны в Настройки → Сторонние плагины → HELLVAULT.": "These settings are also available in Settings → Community plugins → HELLVAULT.",
+  "Открыть HELLVAULT": "Open HELLVAULT",
+  "Экспортировать Кодекс в заметку": "Export the Codex to a note",
+  "Кодекс сохранён в «{0}» ({1}/{2} записей)": "Codex saved to “{0}” ({1}/{2} entries)",
+  "Скорость поворота камеры мышью.": "How quickly the camera turns with the mouse.",
+  "Синтезированные звуковые эффекты (WebAudio).": "Synthesized sound effects (WebAudio).",
+  "Применяется к следующему новому забегу: лёгкая — прежняя обычная, средняя — прежняя тяжёлая, хард — 1 HP и усиленные враги.": "Applies to the next new run: Easy matches the old Normal; Normal matches the old Hard; Hard gives you 1 HP and stronger enemies.",
+  "Доля от размера вкладки. Меньше — быстрее и «пиксельнее».": "Fraction of the view size. Lower is faster and more pixelated.",
+  "50% (по умолчанию)": "50% (default)",
+  "Названия заметок используются в именах Сирот и Дубликатов и на надгробиях. Выбранные ниже папки исключаются.": "Note titles are used for Orphans, Duplicates, and gravestones. Folders selected below are excluded.",
+  "Исключить папки из имён в игре": "Exclude folders from in-game names",
+  "Отмеченные папки и все их вложенные папки не используются для имён врагов и надгробий. Изменения сразу применяются в открытой игре.": "Notes in selected folders and their subfolders are excluded from enemy names and gravestones. Changes apply to open games immediately.",
+  "В хранилище нет папок": "There are no folders in this vault",
+  "Сбросить весь прогресс": "Reset all progress",
+  "Удаляет забег, достижения и открытый Кодекс. Закройте вкладку игры перед сбросом.": "Deletes your runs, achievements, and unlocked Codex entries. Close the game before resetting.",
+  "Сбросить": "Reset",
+  "Прогресс HELLVAULT сброшен": "HELLVAULT progress has been reset"
+};
+var EN_ZONES = [
+  ["Archive", "where notes wait for years"],
+  ["Garden of Notes", "thoughts that have yet to become text"],
+  ["Graph", "a lattice of forgotten connections"],
+  ["Broken Links", "a world-sized 404 error"],
+  ["Core", "home of the Blank Note"]
+];
+var EN_ACHIEVEMENTS = {
+  first_blood: ["First Edit", "Destroy your first creature of Corruption."],
+  kills50: ["Vault Cleanup", "Destroy 50 enemies across all runs."],
+  kills150: ["Garbage Collector", "Destroy 150 enemies across all runs."],
+  quill25: ["The Pen Is Mightier", "Destroy 25 enemies with the Quill."],
+  glitch15: ["Link Repair", "Destroy 15 Broken Links."],
+  spam15: ["Anti-Spam", "Destroy 15 Spam Tags."],
+  dedup: ["Deduplication", "Destroy both Copies of the same Duplicate."],
+  shard1: ["First Shard", "Pick up an obsidian shard."],
+  shard7: ["Integrity", "Collect all seven shards in a single run."],
+  boss: ["Filling the Void", "Defeat the Blank Note."],
+  secret1: ["Hidden File", "Find a secret."],
+  secret3: ["Full Index", "Find all three secrets in a single run."],
+  zones: ["Cartographer", "Visit all five zones of the Vault."],
+  shotgun: ["[[Double Brackets]]", "Find the Wikilink Shotgun."],
+  laser: ["Connected", "Find the Graph Laser."],
+  pages6: ["Chronicler", "Find six diary pages."],
+  pages12: ["Keeper of Memories", "Find all twelve diary pages."],
+  nodmg: ["Without a Scratch", "Pick up a shard without taking damage since entering the zone."],
+  lowhp: ["Close Call", "Fall to 10 HP or less and heal."],
+  speed: ["Quick Search", "Complete the story in under 20 minutes."],
+  flawless: ["No Backups", "Complete the story without dying."]
+};
+var EN_LORE_CATS = { story: "Story", zone: "Zones", bestiary: "Bestiary", diary: "Diary Pages" };
+var EN_LORE = {
+  st_prologue: ["Prologue: Quiet Corruption", "Available from the start.", "The Vault was alive. Thousands of notes breathed through their links, tags kept them in order, and the graph glowed like a city at night.\n\nOne day, synchronization stopped mid-sentence. Corruption seeped through the crack between versions, and notes began to forget one another. Links broke, copies multiplied, and Nothing appeared at the heart of the Vault: the Blank Note, which wanted everything to become a clean page again.\n\nThe Vault fractured into seven obsidian Shards, the core of its memory. As long as they remain scattered, the Corruption grows."],
+  st_keeper: ["The Keeper", "Available from the start.", "You are the Keeper, the last process left in the Vault's memory. You carry the Quill that wrote the first notes and the stubbornness of someone who remembers where everything belongs.\n\nCollect the Shards, open the path to the Core, and restore the Vault. The doors between zones are sealed; each opens only for someone carrying enough Shards."],
+  st_rot: ["The Corruption", "Destroy your first enemy.", "What you destroyed was once a note. The Corruption does not create; it distorts. The forgotten becomes an Orphan, the severed a Broken Link, the repeated a Duplicate, and the obsessive a Spam Tag.\n\nWhen you defeat them, you do not erase them: you set them free. Sometimes they leave behind clean pages or brackets for your weapon."],
+  st_epilogue: ["Epilogue: A Clean Page", "Complete the story.", "The seventh Shard returned to its place, and the graph lit up from end to end. Links healed, Orphans found their parents, and Duplicates became one again.\n\nThe Blank Note did not disappear. The Keeper realized it had never been evil: it was a place for a new thought. Now that the Vault is whole, it is time to begin writing.\n\nThe Vault remembers you, Keeper."],
+  z_0: ["Archive", "Visit the Archive.", "The lower levels of the Vault, where notes can lie for years: stone halls, endless bookshelves, and candles no one puts out. The air smells of old drafts.\n\nThe Corruption first took hold here. Few people visit, and things are easily forgotten. Shards: 1. The door to the Garden opens with 1 shard."],
+  z_1: ["Garden of Notes", "Visit the Garden of Notes.", "Under an open violet sky grow thoughts that have not yet become text. The hedges are tags left to spread unchecked. Among them stand gravestones for notes deleted before anyone read them.\n\nThe Garden is beautiful, but Duplicates gather in its shade. Shards: 2. The door to the Graph opens with 3 shards."],
+  z_2: ["Graph", "Visit the Graph.", "A glowing lattice of connections. Each crystal pillar is a note, each bridge a link. Once, the light of thought ran through them. Now half the lines have gone dark, and Broken Links dart between the nodes.\n\nShards: 2. The door to Broken Links opens with 5 shards."],
+  z_3: ["Broken Links", "Visit Broken Links.", "Ruins where links lead nowhere. Walls flicker with static, the floor is cracked, and the sky is as red as an error message.\n\nThe Corruption is strongest here, and the only path to the Core begins here. Shards: 1. The Core's door opens with 6 shards."],
+  z_4: ["Core", "Enter the Core.", "The heart of the Vault, built from pure obsidian. It once held the index of everything; now the Blank Note lives here. She has the seventh Shard."],
+  b_orphan: ["Orphan", "Destroy an Orphan.", "A note with no incoming links. It wanders slowly, looking for someone to remember it. Harmless alone, dangerous in a crowd.\n\nWeakness: any weapon, even the Quill. It may bear the name of one of your real notes…"],
+  b_glitch: ["Broken Link", "Destroy a Broken Link.", "A fragment of a connection pointing to a nonexistent page. Fast and erratic, it can teleport short distances, like a link that jumps to the wrong place.\n\nTip: keep your distance and shoot when it materializes."],
+  b_dup: ["Duplicate", "Destroy a Duplicate.", "A synchronization conflict given form. When destroyed, a Duplicate splits into two smaller, faster Copies.\n\nTo get rid of a Duplicate for good, destroy both Copies."],
+  b_spam: ["Spam Tag", "Destroy a Spam Tag.", "A #tag applied to everything. It keeps its distance and spits hash symbols.\n\nTake cover behind walls and close the distance while it reloads."],
+  b_boss: ["Blank Note", "Defeat the boss.", "A blank page as large as a cathedral. A cursor blinks within it, waiting for words that no one writes.\n\nThe Blank Note fires void projectiles and summons Orphans. When weakened, she begins teleporting across the Core. Defeating her returns the seventh Shard."],
+  d1: ["Page 1. First Day", "Archive.", "Today I was appointed Keeper. They gave me a Quill and a set of keys to the zones. The Archive is enormous: the shelves stretch farther than the candles can shine. The senior archivist said, ‘The important thing is not to lose anything.’ Sounds simple."],
+  d2: ["Page 2. Whispers", "Archive.", "Someone is whispering in the far aisles. I found a note without a single incoming link. It repeated its own title as if afraid to forget. I linked it to the index, and the whispering stopped. I should do that more often."],
+  d3: ["Page 3. Stash", "Secret in the Archive.", "I hid spare brackets behind a cracked wall in the west wing. If you are reading this, you know how to look closely at walls too. Stand close and press E. The Vault likes those who check."],
+  d4: ["Page 4. Garden", "Garden of Notes.", "The tags are blooming in the Garden again. I trimmed the hedges, but by morning they had doubled in size. New gravestones appeared between them: someone is deleting notes without opening them. I do not know the names on the stones. Do you?"],
+  d5: ["Page 5. Two of Us", "Garden of Notes.", "I met myself. More precisely, my copy. She kept a diary too and insisted she was the real one. We argued until evening, then realized we were using exactly the same words. Synchronization is breaking down."],
+  d6: ["Page 6. Under the Sky", "Secret in the Garden.", "Near the Garden's southern fence, there is a place where the hedge grows the wrong way. I made a shelter there. From here I can see the Vault's sky, violet like the cover of my first notebook."],
+  d7: ["Page 7. Graph Light", "Graph.", "A third of the Graph has gone dark. I walked beside the dead lines and heard something fast scratching along them. A link to nowhere still wants to lead somewhere, so it attacks the first thing it meets."],
+  d8: ["Page 8. The Formula", "Graph.", "If the Shards are gathered, the Core will take them back. I counted: six will open the door; the seventh belongs to the one inside. I will not be strong enough. Perhaps you will be."],
+  d9: ["Page 9. Node", "Secret in the Graph.", "In the eastern corner of the Graph, one pillar glows differently. Beyond it is a room the index cannot see. I left laser energy there. Light is the best way to mend connections."],
+  d10: ["Page 10. Red Sky", "Broken Links.", "The sky over Broken Links has turned red. Every door is a 404 error, every wall an unfinished word. Spam Tags shout their hash marks at everyone passing by. I hardly sleep."],
+  d11: ["Page 11. Voice from the Core", "Broken Links.", "The Blank Note spoke to me. She said she was not angry; she simply wanted everything to be clean. No mistakes. No links. No us. If she wins, the Vault will be perfectly empty."],
+  d12: ["Page 12. The Last One", "Core.", "I am leaving the Quill where the next Keeper will find it. Do not fear the blank page. Fear the one who wants it to stay blank. Gather the Shards. Write something.\n\n— The previous Keeper"]
+};
+var EN_ENEMIES = { orphan: "Orphan", glitch: "Broken Link", dup: "Duplicate", copy: "Copy", spam: "Spam Tag", boss: "Blank Note" };
+var EN_WEAPONS = ["Quill", "Wikilink Shotgun", "Graph Laser"];
+var EN_FALLBACK_NAMES = ["Untitled", "Untitled 2", "Draft", "Ideas for Later", "TODO", "Shopping List", "Meeting 12.03", "Late-Night Thoughts", "Read Later", "Untitled", "Note 404", "Inbox", "Quotes", "Weekly Plan", "Old Project", "Borscht Recipe", "Links"];
+var RU_CONTENT = {
+  zones: ZONES.map(({ name, sub }) => ({ name, sub })),
+  achievements: ACHIEVEMENTS.map(({ title, desc }) => ({ title, desc })),
+  categories: LORE_CATS.map(({ title }) => title),
+  lore: LORE.map(({ title, hint, text }) => ({ title, hint, text })),
+  enemies: Object.fromEntries(Object.entries(EDEF).map(([id, value]) => [id, value.name])),
+  weapons: WEAPONS.map(({ name }) => name),
+  fallback: [...FALLBACK_NAMES]
+};
+function setGameLanguage(language) {
+  GAME_LANGUAGE = language === "en" ? "en" : "ru";
+  const english = GAME_LANGUAGE === "en";
+  ZONES.forEach((z, i) => Object.assign(z, english ? { name: EN_ZONES[i][0], sub: EN_ZONES[i][1] } : RU_CONTENT.zones[i]));
+  ACHIEVEMENTS.forEach((a, i) => Object.assign(a, english ? { title: EN_ACHIEVEMENTS[a.id][0], desc: EN_ACHIEVEMENTS[a.id][1] } : RU_CONTENT.achievements[i]));
+  LORE_CATS.forEach((c, i) => { c.title = english ? EN_LORE_CATS[c.id] : RU_CONTENT.categories[i]; });
+  LORE.forEach((l, i) => Object.assign(l, english ? { title: EN_LORE[l.id][0], hint: EN_LORE[l.id][1], text: EN_LORE[l.id][2] } : RU_CONTENT.lore[i]));
+  Object.keys(EDEF).forEach((id) => { EDEF[id].name = english ? EN_ENEMIES[id] : RU_CONTENT.enemies[id]; });
+  WEAPONS.forEach((w, i) => { w.name = english ? EN_WEAPONS[i] : RU_CONTENT.weapons[i]; });
+  FALLBACK_NAMES.splice(0, FALLBACK_NAMES.length, ...(english ? EN_FALLBACK_NAMES : RU_CONTENT.fallback));
+}
+function tr(parts, ...values) {
+  const key = typeof parts === "string" ? parts : parts.reduce((result, part, i) => result + part + (i < values.length ? `{${i}}` : ""), "");
+  const translated = GAME_LANGUAGE === "en" ? (EN_RUNTIME[key] ?? key) : key;
+  return translated.replace(/\{(\d+)\}/g, (match, index) => index < values.length ? String(values[index]) : match);
+}
+function gameLocale() { return GAME_LANGUAGE === "en" ? "en-US" : "ru-RU"; }
+
 function el(tag, cls, text, parent) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -1489,6 +1751,7 @@ var Game = class {
     this.root = root;
     this.opts = opts;
     this.data = opts.data;
+    setGameLanguage(this.data.settings.language);
     this.art = buildArt();
     this.mode = this.data.lastMode || "story";
     this.world = generateModeWorld(this.mode);
@@ -1669,7 +1932,7 @@ var Game = class {
     const kind = kinds[Math.floor(Math.random() * kinds.length)];
     this.items.push({ id: -1, kind, x: c.x, y: c.y, taken: false });
     this.parts.push({ x: c.x, y: c.y, z: 0.4, t: 0, life: 0.4 });
-    this.msg("Ящик разбит: припасы!", 1.5);
+    this.msg(tr("Ящик разбит: припасы!"), 1.5);
   }
   updateLinear(dt) {
     if (this.run.won) return;
@@ -1678,7 +1941,7 @@ var Game = class {
       boss.awake = true;
       this.bossAwake = true;
       this.sfx.play("boss");
-      this.msg("Впереди Пустая Заметка!", 4);
+      this.msg(tr("Впереди Пустая Заметка!"), 4);
     }
     this.run.spawnTimer -= dt;
     // Не держим за игроком старых врагов на другом конце пути: таймер продолжает создавать новых.
@@ -1709,7 +1972,7 @@ var Game = class {
         this.enemies.push(b);
         this.bossAwake = true;
         this.sfx.play("boss");
-        this.msg(`БОСС · волна ${r.wave}`, 4);
+        this.msg(tr`БОСС · волна ${r.wave}`, 4);
         r.bossPending = false;
         r.spawnTimer = 1.5;
       }
@@ -1751,7 +2014,7 @@ var Game = class {
     this.replenishCrates();
     this.persist();
     this.resume();
-    this.msg(`Волна ${r.wave}`, 3);
+    this.msg(tr`Волна ${r.wave}`, 3);
   }
   finishArena() {
     if (this.run.ended) return;
@@ -1776,10 +2039,19 @@ var Game = class {
 
   // ---------- Настройки / сохранение ----------
   applySettings(s) {
+    s.language = s.language === "ru" ? "ru" : "en";
+    const languageChanged = this.language !== s.language;
+    this.language = s.language;
     this.data.settings = s;
+    setGameLanguage(s.language);
     this.sfx.enabled = s.sound;
     this.sfx.volume = s.volume;
     if (this.names) this.refreshNames();
+    if (languageChanged) {
+      this.msgs = [];
+      this.toasts?.replaceChildren();
+      if (this.run && this.overlay?.classList.contains("vs-show")) this.buildMenu();
+    }
     if (this.wrap) this.resize();
   }
   persist() {
@@ -2219,7 +2491,7 @@ var Game = class {
         b.awake = true;
         this.bossAwake = true;
         this.sfx.play("boss");
-        this.msg("\u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u043F\u0440\u043E\u0431\u0443\u0436\u0434\u0430\u0435\u0442\u0441\u044F\u2026", 4);
+        this.msg(tr("\u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u043F\u0440\u043E\u0431\u0443\u0436\u0434\u0430\u0435\u0442\u0441\u044F\u2026"), 4);
       }
     }
     this.checkAch();
@@ -2234,12 +2506,12 @@ var Game = class {
         this.grid[d.y * MW + d.x] = 0;
         this.navDirty = true;
         this.sfx.play("door");
-        this.msg(`\u041F\u0435\u0447\u0430\u0442\u044C \u0441\u043D\u044F\u0442\u0430: \u043F\u0443\u0442\u044C \u0432 \xAB${ZONES[d.to].name}\xBB \u043E\u0442\u043A\u0440\u044B\u0442`, 4);
+        this.msg(tr`\u041F\u0435\u0447\u0430\u0442\u044C \u0441\u043D\u044F\u0442\u0430: \u043F\u0443\u0442\u044C \u0432 \xAB${ZONES[d.to].name}\xBB \u043E\u0442\u043A\u0440\u044B\u0442`, 4);
         this.persist();
       } else if (this.doorMsgT <= 0) {
         this.doorMsgT = 2.5;
         this.sfx.play("locked");
-        this.msg(`\u0417\u0430\u043F\u0435\u0447\u0430\u0442\u0430\u043D\u043E. \u041D\u0443\u0436\u043D\u043E \u043E\u0441\u043A\u043E\u043B\u043A\u043E\u0432: ${d.need} (\u0443 \u0432\u0430\u0441 ${this.run.shards.length})`, 2.5);
+        this.msg(tr`\u0417\u0430\u043F\u0435\u0447\u0430\u0442\u0430\u043D\u043E. \u041D\u0443\u0436\u043D\u043E \u043E\u0441\u043A\u043E\u043B\u043A\u043E\u0432: ${d.need} (\u0443 \u0432\u0430\u0441 ${this.run.shards.length})`, 2.5);
       }
     });
   }
@@ -2252,7 +2524,7 @@ var Game = class {
       this.grid[cy * MW + cx] = 0;
       this.navDirty = true;
       this.sfx.play("secret");
-      this.msg(`\u041D\u0430\u0439\u0434\u0435\u043D \u0442\u0430\u0439\u043D\u0438\u043A! (${this.run.secrets.length}/3)`, 4);
+      this.msg(tr`\u041D\u0430\u0439\u0434\u0435\u043D \u0442\u0430\u0439\u043D\u0438\u043A! (${this.run.secrets.length}/3)`, 4);
       this.statMax("max_secrets", this.run.secrets.length);
       this.checkAch();
       this.persist();
@@ -2264,9 +2536,9 @@ var Game = class {
     this.hint = "";
     const tx = this.px + Math.cos(this.pa) * 1.1, ty = this.py + Math.sin(this.pa) * 1.1;
     const t = this.grid[Math.floor(ty) * MW + Math.floor(tx)];
-    if (t >= T.SECRET_STONE && t <= T.SECRET_CRYSTAL) this.hint = "\u0417\u0434\u0435\u0441\u044C \u0442\u0440\u0435\u0449\u0438\u043D\u0430\u2026 [E] \u2014 \u043E\u0441\u043C\u043E\u0442\u0440\u0435\u0442\u044C";
+    if (t >= T.SECRET_STONE && t <= T.SECRET_CRYSTAL) this.hint = tr("\u0417\u0434\u0435\u0441\u044C \u0442\u0440\u0435\u0449\u0438\u043D\u0430\u2026 [E] \u2014 \u043E\u0441\u043C\u043E\u0442\u0440\u0435\u0442\u044C");
     for (const d of this.decor) if (d.kind === "tomb" && Math.hypot(d.x - this.px, d.y - this.py) < 1.4) {
-      this.hint = `\u041D\u0430\u0434\u0433\u0440\u043E\u0431\u0438\u0435: \xAB${d.text}\xBB \u2014 \u0443\u0434\u0430\u043B\u0435\u043D\u0430, \u043D\u0435 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u043D\u0430`;
+      this.hint = tr`\u041D\u0430\u0434\u0433\u0440\u043E\u0431\u0438\u0435: \xAB${d.text}\xBB \u2014 \u0443\u0434\u0430\u043B\u0435\u043D\u0430, \u043D\u0435 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u043D\u0430`;
     }
     this.target = null;
     let best = 0.25;
@@ -2287,7 +2559,7 @@ var Game = class {
   fire() {
     const w = WEAPONS[this.cur];
     if (w.ammo === "shells" && this.shells <= 0 || w.ammo === "energy" && this.energy <= 0) {
-      this.msg(w.ammo === "shells" ? "\u041D\u0435\u0442 \u0441\u043A\u043E\u0431\u043E\u043A [[ ]] \u0434\u043B\u044F \u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A\u0430" : "\u041D\u0435\u0442 \u044D\u043D\u0435\u0440\u0433\u0438\u0438 \u0434\u043B\u044F \u043B\u0430\u0437\u0435\u0440\u0430", 1.5);
+      this.msg(w.ammo === "shells" ? tr("\u041D\u0435\u0442 \u0441\u043A\u043E\u0431\u043E\u043A [[ ]] \u0434\u043B\u044F \u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A\u0430") : tr("\u041D\u0435\u0442 \u044D\u043D\u0435\u0440\u0433\u0438\u0438 \u0434\u043B\u044F \u043B\u0430\u0437\u0435\u0440\u0430"), 1.5);
       this.fireCd = 0.4;
       this.sfx.play("click");
       this.cycleWeapon(1);
@@ -2359,7 +2631,7 @@ var Game = class {
         c.awake = true;
         this.enemies.push(c);
       }
-      this.msg("\u0414\u0443\u0431\u043B\u0438\u043A\u0430\u0442 \u0440\u0430\u0441\u043F\u0430\u043B\u0441\u044F \u043D\u0430 \u0434\u0432\u0435 \u041A\u043E\u043F\u0438\u0438!", 2);
+      this.msg(tr("\u0414\u0443\u0431\u043B\u0438\u043A\u0430\u0442 \u0440\u0430\u0441\u043F\u0430\u043B\u0441\u044F \u043D\u0430 \u0434\u0432\u0435 \u041A\u043E\u043F\u0438\u0438!"), 2);
     }
     if (e.type === "copy" && e.parent) {
       const n = (this.dupKills.get(e.parent) || 0) + 1;
@@ -2371,14 +2643,14 @@ var Game = class {
         this.bossAwake = false;
         for (const m of this.enemies) if (m.summoned && !m.dead) { m.dead = true; m.deathT = 0; }
         if (this.mode === "linear") this.finishLinear();
-        else { this.msg("Босс повержен!", 3); this.checkAch(); this.persist(); }
+        else { this.msg(tr("Босс повержен!"), 3); this.checkAch(); this.persist(); }
         return;
       }
       this.run.bossDead = true;
       this.bossAwake = false;
       this.data.progress.stats.k_boss = 1;
       this.items.push({ id: -1, kind: "shard", x: e.x, y: e.y, taken: false, shard: 6 });
-      this.msg("\u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u043F\u043E\u0432\u0435\u0440\u0436\u0435\u043D\u0430! \u041F\u043E\u0434\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u043E\u0441\u043A\u043E\u043B\u043E\u043A.", 6);
+      this.msg(tr("\u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u043F\u043E\u0432\u0435\u0440\u0436\u0435\u043D\u0430! \u041F\u043E\u0434\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u043E\u0441\u043A\u043E\u043B\u043E\u043A."), 6);
       for (const m of this.enemies) if (m.summoned && !m.dead) {
         m.dead = true;
         m.deathT = 0;
@@ -2447,7 +2719,7 @@ var Game = class {
       m.deathT = 99;
     }
     this.zone = -1;
-    this.msg("\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043E \u0438\u0437 \u0440\u0435\u0437\u0435\u0440\u0432\u043D\u043E\u0439 \u043A\u043E\u043F\u0438\u0438", 3);
+    this.msg(tr("\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043E \u0438\u0437 \u0440\u0435\u0437\u0435\u0440\u0432\u043D\u043E\u0439 \u043A\u043E\u043F\u0438\u0438"), 3);
     this.persist();
   }
   updateItems() {
@@ -2467,7 +2739,7 @@ var Game = class {
             this.data.progress.stats.low_hp = 1;
             this.lowHp = false;
           }
-          this.msg(`+${v} HP \u2014 \u0447\u0438\u0441\u0442\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430`, 2);
+          this.msg(tr`+${v} HP \u2014 \u0447\u0438\u0441\u0442\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430`, 2);
           break;
         }
         case "shells":
@@ -2476,7 +2748,7 @@ var Game = class {
             break;
           }
           this.shells = Math.min(60, this.shells + 6);
-          this.msg("+6 \u0441\u043A\u043E\u0431\u043E\u043A [[ ]]", 2);
+          this.msg(tr("+6 \u0441\u043A\u043E\u0431\u043E\u043A [[ ]]"), 2);
           break;
         case "energy":
           if (this.energy >= 300) {
@@ -2484,14 +2756,14 @@ var Game = class {
             break;
           }
           this.energy = Math.min(300, this.energy + 60);
-          this.msg("+60 \u044D\u043D\u0435\u0440\u0433\u0438\u0438 \u0433\u0440\u0430\u0444\u0430", 2);
+          this.msg(tr("+60 \u044D\u043D\u0435\u0440\u0433\u0438\u0438 \u0433\u0440\u0430\u0444\u0430"), 2);
           break;
         case "shotgun":
           this.weapons[1] = true;
           this.shells += 12;
           this.cur = 1;
           this.data.progress.stats.got_shotgun = 1;
-          this.msg("\u041F\u043E\u043B\u0443\u0447\u0435\u043D Wikilink-\u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A! [2]", 4);
+          this.msg(tr("\u041F\u043E\u043B\u0443\u0447\u0435\u043D Wikilink-\u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A! [2]"), 4);
           this.sfx.play("weapon");
           break;
         case "laser":
@@ -2499,14 +2771,14 @@ var Game = class {
           this.energy += 100;
           this.cur = 2;
           this.data.progress.stats.got_laser = 1;
-          this.msg("\u041F\u043E\u043B\u0443\u0447\u0435\u043D \u0413\u0440\u0430\u0444-\u043B\u0430\u0437\u0435\u0440! [3]", 4);
+          this.msg(tr("\u041F\u043E\u043B\u0443\u0447\u0435\u043D \u0413\u0440\u0430\u0444-\u043B\u0430\u0437\u0435\u0440! [3]"), 4);
           this.sfx.play("weapon");
           break;
         case "page": {
           const l = LORE.find((x) => x.id === it.page);
           this.unlockLore(it.page, false);
-          this.msg(`\u0421\u0442\u0440\u0430\u043D\u0438\u0446\u0430 \u0434\u043D\u0435\u0432\u043D\u0438\u043A\u0430: \xAB${l ? l.title : ""}\xBB \u2014 \u0447\u0438\u0442\u0430\u0442\u044C \u0432 \u041A\u043E\u0434\u0435\u043A\u0441\u0435 (Esc)`, 5);
-          this.toast("\u{1F4DC}", "\u041A\u043E\u0434\u0435\u043A\u0441: \u043D\u043E\u0432\u0430\u044F \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0430", l ? l.title : "");
+          this.msg(tr`\u0421\u0442\u0440\u0430\u043D\u0438\u0446\u0430 \u0434\u043D\u0435\u0432\u043D\u0438\u043A\u0430: \xAB${l ? l.title : ""}\xBB \u2014 \u0447\u0438\u0442\u0430\u0442\u044C \u0432 \u041A\u043E\u0434\u0435\u043A\u0441\u0435 (Esc)`, 5);
+          this.toast("\u{1F4DC}", tr("\u041A\u043E\u0434\u0435\u043A\u0441: \u043D\u043E\u0432\u0430\u044F \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0430"), l ? l.title : "");
           this.sfx.play("page");
           break;
         }
@@ -2516,7 +2788,7 @@ var Game = class {
           if (!this.dmgInZone) this.data.progress.stats.nodmg_shard = 1;
           this.sfx.play("shard");
           const n = this.run.shards.length;
-          this.msg(`\u041E\u0441\u043A\u043E\u043B\u043E\u043A \u043E\u0431\u0441\u0438\u0434\u0438\u0430\u043D\u0430! ${n}/7`, 4);
+          this.msg(tr`\u041E\u0441\u043A\u043E\u043B\u043E\u043A \u043E\u0431\u0441\u0438\u0434\u0438\u0430\u043D\u0430! ${n}/7`, 4);
           this.pickupT = 0.4;
           if (n >= 7) {
             it.taken = true;
@@ -2708,7 +2980,7 @@ var Game = class {
           m.summoned = true;
           this.enemies.push(m);
         }
-        this.msg("\u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u043F\u0440\u0438\u0437\u044B\u0432\u0430\u0435\u0442 \u0437\u0430\u0431\u044B\u0442\u044B\u0435 \u0437\u0430\u043C\u0435\u0442\u043A\u0438!", 2);
+        this.msg(tr("\u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u043F\u0440\u0438\u0437\u044B\u0432\u0430\u0435\u0442 \u0437\u0430\u0431\u044B\u0442\u044B\u0435 \u0437\u0430\u043C\u0435\u0442\u043A\u0438!"), 2);
       }
     }
     if (phase === 3) {
@@ -2755,7 +3027,7 @@ var Game = class {
       if (p.achievements[a.id]) continue;
       if (a.value(p) >= a.target) {
         p.achievements[a.id] = Date.now();
-        this.toast(a.icon, "\u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u0435: " + a.title, a.desc, true);
+        this.toast(a.icon, tr("\u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u0435: ") + a.title, a.desc, true);
         any = true;
       }
     }
@@ -2769,7 +3041,7 @@ var Game = class {
     if (p.lore.includes(id)) return;
     p.lore.push(id);
     const l = LORE.find((x) => x.id === id);
-    if (toast && l) this.toast("\u{1F4D6}", "\u041A\u043E\u0434\u0435\u043A\u0441: \u043D\u043E\u0432\u0430\u044F \u0437\u0430\u043F\u0438\u0441\u044C", l.title);
+    if (toast && l) this.toast("\u{1F4D6}", tr("\u041A\u043E\u0434\u0435\u043A\u0441: \u043D\u043E\u0432\u0430\u044F \u0437\u0430\u043F\u0438\u0441\u044C"), l.title);
   }
   toast(icon, title, desc, gold = false) {
     const t = el("div", "vs-toast" + (gold ? " vs-toast-gold" : ""), void 0, this.toasts);
@@ -3087,10 +3359,10 @@ var Game = class {
       ctx.textAlign = "center";
       ctx.fillStyle = "#ff5c8a";
       ctx.font = font(34);
-      ctx.fillText("\u0417\u0410\u041C\u0415\u0422\u041A\u0410 \u041F\u041E\u0412\u0420\u0415\u0416\u0414\u0415\u041D\u0410", W / 2, H / 2 - 20 * k);
+      ctx.fillText(tr("\u0417\u0410\u041C\u0415\u0422\u041A\u0410 \u041F\u041E\u0412\u0420\u0415\u0416\u0414\u0415\u041D\u0410"), W / 2, H / 2 - 20 * k);
       ctx.fillStyle = "#e9d5ff";
       ctx.font = font(16, false);
-      ctx.fillText(this.mode === "arena" ? "Забег завершён…" : "Восстановление из резервной копии…", W / 2, H / 2 + 20 * k);
+      ctx.fillText(this.mode === "arena" ? tr("Забег завершён…") : tr("Восстановление из резервной копии…"), W / 2, H / 2 + 20 * k);
       return;
     }
     if (this.mapOpen) {
@@ -3147,12 +3419,12 @@ var Game = class {
     ctx.textAlign = "right";
     ctx.font = font(22);
     ctx.fillStyle = "#e879f9";
-    const modeLabel = this.mode === "story" ? `◆ ${this.run.shards.length}/7` : this.mode === "arena" ? `ВОЛНА ${this.run.wave}` : "К БОССУ ↑";
+    const modeLabel = this.mode === "story" ? `◆ ${this.run.shards.length}/7` : this.mode === "arena" ? tr`ВОЛНА ${this.run.wave}` : tr("К БОССУ ↑");
     ctx.fillText(modeLabel, W - 16 * k, yb);
     ctx.font = font(12, false);
     ctx.fillStyle = "rgba(233,213,255,0.8)";
     const z = ZONES[Math.max(0, this.zone)];
-    ctx.fillText(`${this.mode === "story" ? z.name : this.mode === "arena" ? "Арена" : "Путь"} · ${fmtTime(this.run.time)} · убито ${this.run.kills}`, W - 160 * k, yb);
+    ctx.fillText(tr`${this.mode === "story" ? z.name : this.mode === "arena" ? tr("Арена") : tr("Путь")} · ${fmtTime(this.run.time)} · убито ${this.run.kills}`, W - 160 * k, yb);
     ctx.textAlign = "center";
     this.msgs.forEach((m, i) => {
       ctx.font = font(14);
@@ -3184,7 +3456,7 @@ var Game = class {
       ctx.fillRect(bx, by, bw * Math.max(0, boss2.hp / boss2.maxHp), 16 * k);
       ctx.font = font(12);
       ctx.fillStyle = "#6d28d9";
-      ctx.fillText("\u041F\u0423\u0421\u0422\u0410\u042F \u0417\u0410\u041C\u0415\u0422\u041A\u0410", W / 2, by + 8 * k);
+      ctx.fillText(tr("\u041F\u0423\u0421\u0422\u0410\u042F \u0417\u0410\u041C\u0415\u0422\u041A\u0410"), W / 2, by + 8 * k);
     }
     if (this.data.settings.showFps) {
       ctx.textAlign = "left";
@@ -3275,9 +3547,9 @@ var Game = class {
     ctx.textBaseline = "middle";
     ctx.font = "bold 16px ui-monospace, monospace";
     ctx.fillStyle = "#e9d5ff";
-    ctx.fillText(`${this.mode === "story" ? `КАРТА · ◆ ${this.run.shards.length}/7` : this.mode === "arena" ? `АРЕНА · ВОЛНА ${this.run.wave}` : "ЛИНЕЙНЫЙ ПУТЬ"} · M — закрыть`, W / 2, Math.max(14, y0 - 16));
+    ctx.fillText(tr`${this.mode === "story" ? tr`КАРТА · ◆ ${this.run.shards.length}/7` : this.mode === "arena" ? tr`АРЕНА · ВОЛНА ${this.run.wave}` : tr("ЛИНЕЙНЫЙ ПУТЬ")} · M — закрыть`, W / 2, Math.max(14, y0 - 16));
     ctx.font = "12px ui-monospace, monospace";
-    const legend = [["#e879f9", "\u25CF \u043E\u0441\u043A\u043E\u043B\u043E\u043A"], ["#fde68a", "\u25CF \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0430"], ["#22d3ee", "\u25CF \u043E\u0440\u0443\u0436\u0438\u0435"], ["#fbbf24", "\u25A0 \u0434\u0432\u0435\u0440\u044C"], ["#ffffff", "\u25CF \u0442\u044B"]];
+    const legend = [["#e879f9", tr("\u25CF \u043E\u0441\u043A\u043E\u043B\u043E\u043A")], ["#fde68a", tr("\u25CF \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0430")], ["#22d3ee", tr("\u25CF \u043E\u0440\u0443\u0436\u0438\u0435")], ["#fbbf24", tr("\u25A0 \u0434\u0432\u0435\u0440\u044C")], ["#ffffff", tr("\u25CF \u0442\u044B")]];
     const lw = legend.map(([, t]) => ctx.measureText(t).width + 24);
     let lx = W / 2 - lw.reduce((a, b) => a + b, 0) / 2;
     ctx.textAlign = "left";
@@ -3328,9 +3600,9 @@ var Game = class {
     const panel = el("div", "vs-panel", void 0, o);
     const head = el("div", "vs-head", void 0, panel);
     el("div", "vs-logo", "HELLVAULT", head);
-    el("div", "vs-logo-sub", "◆ ИГРА ВНУТРИ OBSIDIAN ◆", head);
+    el("div", "vs-logo-sub", tr("◆ ИГРА ВНУТРИ OBSIDIAN ◆"), head);
     const tabs = el("div", "vs-tabs", void 0, panel);
-    const tabDefs = [["main", this.state === "win" ? "Победа" : "Игра"], ["ach", "Достижения"], ["codex", "Кодекс"], ["records", "Рекорды"], ["controls", "Управление"], ["settings", "Настройки"]];
+    const tabDefs = [["main", this.state === "win" ? tr("Победа") : tr("Игра")], ["ach", tr("Достижения")], ["codex", tr("Кодекс")], ["records", tr("Рекорды")], ["controls", tr("Управление")], ["settings", tr("Настройки")]];
     for (const [id, title] of tabDefs) {
       const active = this.tab === id || id === "main" && this.tab === "win";
       const b = el("button", "vs-tab" + (active ? " vs-active" : ""), title, tabs);
@@ -3373,11 +3645,11 @@ var Game = class {
     this.startMode(mode, true);
   }
   menuMain(body) {
-    el("p", "vs-intro", "Выберите режим. Забеги сохраняются отдельно; сложность выбирается в настройках и фиксируется при начале забега.", body);
+    el("p", "vs-intro", tr("Выберите режим. Забеги сохраняются отдельно; сложность выбирается в настройках и фиксируется при начале забега."), body);
     const modes = [
-      ["story", "📖 История · 7 глав", "Прежний сюжет: найдите семь осколков и восстановите Хранилище."],
-      ["linear", "⚔ Линейный путь", "Идите вперёд по извилистому пути, отражайте постоянно появляющихся врагов и победите босса."],
-      ["arena", "∞ Бесконечная арена", "Волны, разрушаемые ящики, улучшения после каждой волны и босс каждые пять волн."]
+      ["story", tr("📖 История · 7 глав"), tr("Прежний сюжет: найдите семь осколков и восстановите Хранилище.")],
+      ["linear", tr("⚔ Линейный путь"), tr("Идите вперёд по извилистому пути, отражайте постоянно появляющихся врагов и победите босса.")],
+      ["arena", tr("∞ Бесконечная арена"), tr("Волны, разрушаемые ящики, улучшения после каждой волны и босс каждые пять волн.")]
     ];
     const grid = el("div", "vs-mode-grid", void 0, body);
     for (const [mode, title, description] of modes) {
@@ -3387,89 +3659,89 @@ var Game = class {
       const row = el("div", "vs-mode-actions", void 0, card);
       const saved = this.data.runs[mode];
       if (mode === "arena" && !this.data.progress.arenaUnlocked) {
-        const b = this.btn(row, "🔒 Пройдите историю", () => {});
+        const b = this.btn(row, tr("🔒 Пройдите историю"), () => {});
         b.disabled = true;
-        el("small", void 0, "Откроется после первой победы в истории на любой сложности.", card);
+        el("small", void 0, tr("Откроется после первой победы в истории на любой сложности."), card);
         continue;
       }
       if (saved) {
-        if (!(mode === "linear" && saved.won)) this.btn(row, "▶ Продолжить", () => this.startMode(mode), "vs-primary");
-        const detail = mode === "story" ? `Глава ${Math.min(7, saved.shards.length + 1)}/7 · осколков ${saved.shards.length}/7` : mode === "arena" ? `Волна ${saved.wave}` : "Забег сохранён";
+        if (!(mode === "linear" && saved.won)) this.btn(row, tr("▶ Продолжить"), () => this.startMode(mode), "vs-primary");
+        const detail = mode === "story" ? tr`Глава ${Math.min(7, saved.shards.length + 1)}/7 · осколков ${saved.shards.length}/7` : mode === "arena" ? tr`Волна ${saved.wave}` : tr("Забег сохранён");
         el("small", void 0, `${detail} · ${fmtTime(saved.time || 0)}`, card);
       }
-      const newLabel = this.confirmNew === mode ? "Точно начать заново?" : saved ? "Начать заново" : "▶ Начать";
+      const newLabel = this.confirmNew === mode ? tr("Точно начать заново?") : saved ? tr("Начать заново") : tr("▶ Начать");
       this.btn(row, newLabel, () => this.requestNewMode(mode), this.confirmNew === mode ? "vs-danger" : saved ? "" : "vs-primary");
     }
     const meta = el("div", "vs-meta", void 0, body);
     const p = this.data.progress;
-    el("span", void 0, `🏆 Достижения: ${Object.keys(p.achievements).length}/${ACHIEVEMENTS.length}`, meta);
-    el("span", void 0, `📖 Кодекс: ${LORE.filter((l) => p.lore.includes(l.id)).length}/${LORE.length}`, meta);
-    el("span", void 0, `Следующий забег: ${{ easy: "лёгкий", normal: "средний", hard: "хард · 1 HP" }[this.data.settings.difficulty]}`, meta);
-    if (this.data.run) el("div", "vs-tip", `Текущий забег: ${{ easy: "лёгкий", normal: "средний", hard: "хард" }[this.run.difficulty]}.`, body);
+    el("span", void 0, tr`🏆 Достижения: ${Object.keys(p.achievements).length}/${ACHIEVEMENTS.length}`, meta);
+    el("span", void 0, tr`📖 Кодекс: ${LORE.filter((l) => p.lore.includes(l.id)).length}/${LORE.length}`, meta);
+    el("span", void 0, tr`Следующий забег: ${{ easy: tr("лёгкий"), normal: tr("средний"), hard: tr("хард · 1 HP") }[this.data.settings.difficulty]}`, meta);
+    if (this.data.run) el("div", "vs-tip", tr`Текущий забег: ${{ easy: tr("лёгкий"), normal: tr("средний"), hard: tr("хард") }[this.run.difficulty]}.`, body);
   }
   menuUpgrade(body) {
-    el("h2", "vs-win-title", `ВОЛНА ${this.run.completedWave} ПРОЙДЕНА`, body);
-    el("p", "vs-intro", "Выберите одно улучшение. После выбора начнётся следующая волна.", body);
+    el("h2", "vs-win-title", tr`ВОЛНА ${this.run.completedWave} ПРОЙДЕНА`, body);
+    el("p", "vs-intro", tr("Выберите одно улучшение. После выбора начнётся следующая волна."), body);
     const row = el("div", "vs-upgrades", void 0, body);
-    this.btn(row, `⚔ Урон +25% (сейчас ${Math.round(this.run.damageMult * 100)}%)`, () => this.chooseUpgrade("damage"), "vs-primary");
-    this.btn(row, `➜ Скорость +10% (сейчас ${Math.round(this.run.speedMult * 100)}%)`, () => this.chooseUpgrade("speed"));
-    this.btn(row, this.run.difficulty === "hard" ? "✦ Оружие и боеприпасы" : "✦ Оружие, боеприпасы и +35 HP", () => this.chooseUpgrade("supplies"));
+    this.btn(row, tr`⚔ Урон +25% (сейчас ${Math.round(this.run.damageMult * 100)}%)`, () => this.chooseUpgrade("damage"), "vs-primary");
+    this.btn(row, tr`➜ Скорость +10% (сейчас ${Math.round(this.run.speedMult * 100)}%)`, () => this.chooseUpgrade("speed"));
+    this.btn(row, this.run.difficulty === "hard" ? tr("✦ Оружие и боеприпасы") : tr("✦ Оружие, боеприпасы и +35 HP"), () => this.chooseUpgrade("supplies"));
   }
   menuRecords(body) {
-    el("h2", "vs-win-title", "РЕКОРДЫ АРЕНЫ", body);
-    el("p", "vs-intro", "Сначала учитываются пройденные волны, затем количество убитых врагов. Таблица хранится в этом хранилище.", body);
-    if (!this.data.records.length) { el("p", "vs-intro", "Пока нет завершённых забегов.", body); return; }
+    el("h2", "vs-win-title", tr("РЕКОРДЫ АРЕНЫ"), body);
+    el("p", "vs-intro", tr("Сначала учитываются пройденные волны, затем количество убитых врагов. Таблица хранится в этом хранилище."), body);
+    if (!this.data.records.length) { el("p", "vs-intro", tr("Пока нет завершённых забегов."), body); return; }
     const table = el("table", "vs-records", void 0, body);
     const head = el("tr", void 0, void 0, table);
-    for (const name of ["#", "Волны", "Убито", "Время", "Сложность", "Дата"]) el("th", void 0, name, head);
+    for (const name of ["#", tr("Волны"), tr("Убито"), tr("Время"), tr("Сложность"), tr("Дата")]) el("th", void 0, name, head);
     this.data.records.forEach((r, i) => {
       const tr = el("tr", void 0, void 0, table);
-      for (const value of [i + 1, r.wave, r.kills, fmtTime(r.time), { easy: "Лёгкая", normal: "Средняя", hard: "Хард" }[r.difficulty] || r.difficulty, new Date(r.date).toLocaleDateString("ru-RU")]) el("td", void 0, String(value), tr);
+      for (const value of [i + 1, r.wave, r.kills, fmtTime(r.time), { easy: tr("Лёгкая"), normal: tr("Средняя"), hard: tr("Хард") }[r.difficulty] || r.difficulty, new Date(r.date).toLocaleDateString(gameLocale())]) el("td", void 0, String(value), tr);
     });
   }
   menuGameOver(body) {
-    el("h2", "vs-win-title", "ЗАБЕГ ЗАВЕРШЁН", body);
-    el("p", "vs-intro", `Пройдено волн: ${this.run.completedWave}. Убито врагов: ${this.run.kills}. Результат сохранён в таблице рекордов.`, body);
+    el("h2", "vs-win-title", tr("ЗАБЕГ ЗАВЕРШЁН"), body);
+    el("p", "vs-intro", tr`Пройдено волн: ${this.run.completedWave}. Убито врагов: ${this.run.kills}. Результат сохранён в таблице рекордов.`, body);
     const row = el("div", "vs-row", void 0, body);
-    this.btn(row, "Рекорды", () => { this.tab = "records"; this.buildMenu(); }, "vs-primary");
-    this.btn(row, "Главное меню", () => { this.state = "menu"; this.tab = "main"; this.buildMenu(); });
-    this.btn(row, "Новый забег", () => this.startMode("arena", true));
+    this.btn(row, tr("Рекорды"), () => { this.tab = "records"; this.buildMenu(); }, "vs-primary");
+    this.btn(row, tr("Главное меню"), () => { this.state = "menu"; this.tab = "main"; this.buildMenu(); });
+    this.btn(row, tr("Новый забег"), () => this.startMode("arena", true));
   }
   menuLinearWin(body) {
-    el("h2", "vs-win-title", "ПУТЬ ПРОЙДЕН", body);
-    el("p", "vs-intro", `Босс повержен за ${fmtTime(this.run.time)}. Удалено врагов: ${this.run.kills}.`, body);
+    el("h2", "vs-win-title", tr("ПУТЬ ПРОЙДЕН"), body);
+    el("p", "vs-intro", tr`Босс повержен за ${fmtTime(this.run.time)}. Удалено врагов: ${this.run.kills}.`, body);
     const row = el("div", "vs-row", void 0, body);
-    this.btn(row, "Главное меню", () => { this.state = "menu"; this.tab = "main"; this.buildMenu(); }, "vs-primary");
-    this.btn(row, "Пройти ещё раз", () => this.startMode("linear", true));
+    this.btn(row, tr("Главное меню"), () => { this.state = "menu"; this.tab = "main"; this.buildMenu(); }, "vs-primary");
+    this.btn(row, tr("Пройти ещё раз"), () => this.startMode("linear", true));
   }
   menuWin(body) {
     const r = this.run;
-    el("h2", "vs-win-title", "\u0425\u0420\u0410\u041D\u0418\u041B\u0418\u0429\u0415 \u0412\u041E\u0421\u0421\u0422\u0410\u041D\u041E\u0412\u041B\u0415\u041D\u041E", body);
-    el("p", "vs-intro", "\u0421\u0435\u0434\u044C\u043C\u043E\u0439 \u043E\u0441\u043A\u043E\u043B\u043E\u043A \u0432\u0441\u0442\u0430\u043B \u043D\u0430 \u043C\u0435\u0441\u0442\u043E. \u0413\u0440\u0430\u0444 \u0432\u0441\u043F\u044B\u0445\u043D\u0443\u043B \u043E\u0442 \u043A\u0440\u0430\u044F \u0434\u043E \u043A\u0440\u0430\u044F, \u0430 \u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u0441\u0442\u0430\u043B\u0430 \u043F\u0440\u043E\u0441\u0442\u043E \u0447\u0438\u0441\u0442\u044B\u043C \u043B\u0438\u0441\u0442\u043E\u043C \u2014 \u043C\u0435\u0441\u0442\u043E\u043C \u0434\u043B\u044F \u043D\u043E\u0432\u043E\u0439 \u043C\u044B\u0441\u043B\u0438.", body);
+    el("h2", "vs-win-title", tr("\u0425\u0420\u0410\u041D\u0418\u041B\u0418\u0429\u0415 \u0412\u041E\u0421\u0421\u0422\u0410\u041D\u041E\u0412\u041B\u0415\u041D\u041E"), body);
+    el("p", "vs-intro", tr("\u0421\u0435\u0434\u044C\u043C\u043E\u0439 \u043E\u0441\u043A\u043E\u043B\u043E\u043A \u0432\u0441\u0442\u0430\u043B \u043D\u0430 \u043C\u0435\u0441\u0442\u043E. \u0413\u0440\u0430\u0444 \u0432\u0441\u043F\u044B\u0445\u043D\u0443\u043B \u043E\u0442 \u043A\u0440\u0430\u044F \u0434\u043E \u043A\u0440\u0430\u044F, \u0430 \u041F\u0443\u0441\u0442\u0430\u044F \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u0441\u0442\u0430\u043B\u0430 \u043F\u0440\u043E\u0441\u0442\u043E \u0447\u0438\u0441\u0442\u044B\u043C \u043B\u0438\u0441\u0442\u043E\u043C \u2014 \u043C\u0435\u0441\u0442\u043E\u043C \u0434\u043B\u044F \u043D\u043E\u0432\u043E\u0439 \u043C\u044B\u0441\u043B\u0438."), body);
     const s = el("div", "vs-stats", void 0, body);
-    el("span", void 0, `\u23F1 \u0412\u0440\u0435\u043C\u044F: ${fmtTime(r.time)}`, s);
-    el("span", void 0, `\u2620 \u0423\u0434\u0430\u043B\u0435\u043D\u043E: ${r.kills}`, s);
-    el("span", void 0, `\u21BA \u0413\u0438\u0431\u0435\u043B\u0435\u0439: ${r.deaths}`, s);
-    el("span", void 0, `? \u0422\u0430\u0439\u043D\u0438\u043A\u0438: ${r.secrets.length}/3`, s);
-    el("span", void 0, `\u2761 \u0421\u0442\u0440\u0430\u043D\u0438\u0446: ${this.data.progress.lore.filter((l) => l.startsWith("d")).length}/12`, s);
+    el("span", void 0, tr`\u23F1 \u0412\u0440\u0435\u043C\u044F: ${fmtTime(r.time)}`, s);
+    el("span", void 0, tr`\u2620 \u0423\u0434\u0430\u043B\u0435\u043D\u043E: ${r.kills}`, s);
+    el("span", void 0, tr`\u21BA \u0413\u0438\u0431\u0435\u043B\u0435\u0439: ${r.deaths}`, s);
+    el("span", void 0, tr`? \u0422\u0430\u0439\u043D\u0438\u043A\u0438: ${r.secrets.length}/3`, s);
+    el("span", void 0, tr`\u2761 \u0421\u0442\u0440\u0430\u043D\u0438\u0446: ${this.data.progress.lore.filter((l) => l.startsWith("d")).length}/12`, s);
     const row = el("div", "vs-row", void 0, body);
-    this.btn(row, "\u25B6 \u0418\u0441\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u044C \u0434\u0430\u043B\u044C\u0448\u0435", () => {
+    this.btn(row, tr("\u25B6 \u0418\u0441\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u044C \u0434\u0430\u043B\u044C\u0448\u0435"), () => {
       this.state = "menu";
       this.resume();
     }, "vs-primary");
-    this.btn(row, "\u0427\u0438\u0442\u0430\u0442\u044C \u044D\u043F\u0438\u043B\u043E\u0433", () => {
+    this.btn(row, tr("\u0427\u0438\u0442\u0430\u0442\u044C \u044D\u043F\u0438\u043B\u043E\u0433"), () => {
       this.codexSel = "st_epilogue";
       this.tab = "codex";
       this.buildMenu();
     });
-    this.btn(row, "\u041D\u043E\u0432\u0430\u044F \u0438\u0433\u0440\u0430", () => this.startNew());
-    this.btn(row, "Режимы и арена", () => { this.state = "menu"; this.tab = "main"; this.buildMenu(); }, "vs-primary");
+    this.btn(row, tr("\u041D\u043E\u0432\u0430\u044F \u0438\u0433\u0440\u0430"), () => this.startNew());
+    this.btn(row, tr("Режимы и арена"), () => { this.state = "menu"; this.tab = "main"; this.buildMenu(); }, "vs-primary");
   }
   menuAch(body) {
     const p = this.data.progress;
     const n = Object.keys(p.achievements).length;
     const top = el("div", "vs-ach-top", void 0, body);
-    el("span", void 0, `\u041E\u0442\u043A\u0440\u044B\u0442\u043E ${n} \u0438\u0437 ${ACHIEVEMENTS.length}`, top);
+    el("span", void 0, tr`\u041E\u0442\u043A\u0440\u044B\u0442\u043E ${n} \u0438\u0437 ${ACHIEVEMENTS.length}`, top);
     const bar = el("div", "vs-bar", void 0, top);
     el("div", "vs-bar-fill", void 0, bar).style.width = `${n / ACHIEVEMENTS.length * 100}%`;
     const grid = el("div", "vs-ach-grid", void 0, body);
@@ -3481,7 +3753,7 @@ var Game = class {
       const b = el("div", "vs-ach-body", void 0, card);
       el("div", "vs-ach-title", a.title, b);
       el("div", "vs-ach-desc", a.desc, b);
-      if (t) el("div", "vs-ach-date", "\u2713 \u041E\u0442\u043A\u0440\u044B\u0442\u043E " + new Date(t).toLocaleDateString("ru-RU"), b);
+      if (t) el("div", "vs-ach-date", tr("\u2713 \u041E\u0442\u043A\u0440\u044B\u0442\u043E ") + new Date(t).toLocaleDateString(gameLocale()), b);
       else {
         const pb = el("div", "vs-bar vs-bar-sm", void 0, b);
         el("div", "vs-bar-fill", void 0, pb).style.width = `${v / a.target * 100}%`;
@@ -3500,7 +3772,7 @@ var Game = class {
       el("div", "vs-codex-cat", `${c.title} \xB7 ${got}/${entries.length}`, list);
       for (const l of entries) {
         const open2 = p.lore.includes(l.id);
-        const it = el("div", "vs-codex-item" + (open2 ? "" : " vs-locked") + (this.codexSel === l.id ? " vs-active" : ""), open2 ? l.title : "??? \u2014 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E", list);
+        const it = el("div", "vs-codex-item" + (open2 ? "" : " vs-locked") + (this.codexSel === l.id ? " vs-active" : ""), open2 ? l.title : tr("??? \u2014 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E"), list);
         it.onclick = () => {
           this.codexSel = l.id;
           this.buildMenu();
@@ -3513,30 +3785,30 @@ var Game = class {
     el("div", "vs-codex-kicker", cat ? cat.title : "", view);
     el("h3", void 0, open ? sel.title : "???", view);
     if (open) for (const para of sel.text.split("\n\n")) el("p", void 0, para, view);
-    else el("p", "vs-locked-text", "\u0417\u0430\u043F\u0438\u0441\u044C \u0435\u0449\u0451 \u043D\u0435 \u043E\u0442\u043A\u0440\u044B\u0442\u0430. \u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430: " + sel.hint, view);
+    else el("p", "vs-locked-text", tr("\u0417\u0430\u043F\u0438\u0441\u044C \u0435\u0449\u0451 \u043D\u0435 \u043E\u0442\u043A\u0440\u044B\u0442\u0430. \u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430: ") + sel.hint, view);
     if (this.opts.onExportLore) {
       const row = el("div", "vs-row", void 0, view);
-      this.btn(row, "\u21E9 \u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u041A\u043E\u0434\u0435\u043A\u0441 \u0432 \u0437\u0430\u043C\u0435\u0442\u043A\u0443", async () => {
+      this.btn(row, tr("\u21E9 \u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u041A\u043E\u0434\u0435\u043A\u0441 \u0432 \u0437\u0430\u043C\u0435\u0442\u043A\u0443"), async () => {
         try {
           const res = await this.opts.onExportLore();
-          this.toast("\u{1F4DD}", "\u041A\u043E\u0434\u0435\u043A\u0441 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D", typeof res === "string" ? res : "\u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u0441\u043E\u0437\u0434\u0430\u043D\u0430 \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435");
+          this.toast("\u{1F4DD}", tr("\u041A\u043E\u0434\u0435\u043A\u0441 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D"), typeof res === "string" ? res : tr("\u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u0441\u043E\u0437\u0434\u0430\u043D\u0430 \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435"));
         } catch (e) {
-          this.toast("\u26A0", "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C", String(e));
+          this.toast("\u26A0", tr("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C"), String(e));
         }
       });
     }
   }
   menuControls(body) {
     const rows = [
-      ["W A S D / \u2191 \u2193", "\u0434\u0432\u0438\u0436\u0435\u043D\u0438\u0435"],
-      ["\u2190 \u2192", "\u043F\u043E\u0432\u043E\u0440\u043E\u0442 (\u0431\u0435\u0437 \u043C\u044B\u0448\u0438)"],
-      ["\u041C\u044B\u0448\u044C", "\u043E\u0431\u0437\u043E\u0440 \u2014 \u043A\u043B\u0438\u043A\u043D\u0438\u0442\u0435 \u043F\u043E \u044D\u043A\u0440\u0430\u043D\u0443 \u0434\u043B\u044F \u0437\u0430\u0445\u0432\u0430\u0442\u0430"],
-      ["\u041B\u041A\u041C / \u041F\u0440\u043E\u0431\u0435\u043B", "\u0432\u044B\u0441\u0442\u0440\u0435\u043B"],
-      ["1 \xB7 2 \xB7 3 / \u043A\u043E\u043B\u0435\u0441\u043E / Q", "\u0441\u043C\u0435\u043D\u0430 \u043E\u0440\u0443\u0436\u0438\u044F"],
-      ["Shift", "\u0431\u0435\u0433"],
-      ["E / F", "\u043E\u0441\u043C\u043E\u0442\u0440\u0435\u0442\u044C \u0441\u0442\u0435\u043D\u0443, \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u0442\u0430\u0439\u043D\u0438\u043A"],
-      ["M / Tab", "\u043A\u0430\u0440\u0442\u0430 \u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430"],
-      ["Esc", "\u043F\u0430\u0443\u0437\u0430 \u0438 \u043C\u0435\u043D\u044E"]
+      ["W A S D / \u2191 \u2193", tr("\u0434\u0432\u0438\u0436\u0435\u043D\u0438\u0435")],
+      ["\u2190 \u2192", tr("\u043F\u043E\u0432\u043E\u0440\u043E\u0442 (\u0431\u0435\u0437 \u043C\u044B\u0448\u0438)")],
+      [tr("\u041C\u044B\u0448\u044C"), tr("\u043E\u0431\u0437\u043E\u0440 \u2014 \u043A\u043B\u0438\u043A\u043D\u0438\u0442\u0435 \u043F\u043E \u044D\u043A\u0440\u0430\u043D\u0443 \u0434\u043B\u044F \u0437\u0430\u0445\u0432\u0430\u0442\u0430")],
+      [tr("\u041B\u041A\u041C / \u041F\u0440\u043E\u0431\u0435\u043B"), tr("\u0432\u044B\u0441\u0442\u0440\u0435\u043B")],
+      [tr("1 \xB7 2 \xB7 3 / \u043A\u043E\u043B\u0435\u0441\u043E / Q"), tr("\u0441\u043C\u0435\u043D\u0430 \u043E\u0440\u0443\u0436\u0438\u044F")],
+      ["Shift", tr("\u0431\u0435\u0433")],
+      ["E / F", tr("\u043E\u0441\u043C\u043E\u0442\u0440\u0435\u0442\u044C \u0441\u0442\u0435\u043D\u0443, \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u0442\u0430\u0439\u043D\u0438\u043A")],
+      ["M / Tab", tr("\u043A\u0430\u0440\u0442\u0430 \u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430")],
+      ["Esc", tr("\u043F\u0430\u0443\u0437\u0430 \u0438 \u043C\u0435\u043D\u044E")]
     ];
     const t = el("div", "vs-controls", void 0, body);
     for (const [k, v] of rows) {
@@ -3545,12 +3817,12 @@ var Game = class {
       el("span", void 0, v, r);
     }
     const w = el("div", "vs-weapons", void 0, body);
-    el("h4", void 0, "\u0410\u0440\u0441\u0435\u043D\u0430\u043B", w);
-    el("p", void 0, "\u2712 \u041F\u0435\u0440\u043E \u2014 \u0431\u0435\u0441\u043A\u043E\u043D\u0435\u0447\u043D\u044B\u0435 \u0447\u0435\u0440\u043D\u0438\u043B\u0430, \u0434\u0432\u043E\u0439\u043D\u043E\u0439 \u0443\u0440\u043E\u043D \u0432\u043F\u043B\u043E\u0442\u043D\u0443\u044E.", w);
-    el("p", void 0, "[[ ]] Wikilink-\u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A \u2014 7 \u0441\u043A\u043E\u0431\u043E\u043A-\u0434\u0440\u043E\u0431\u0438\u043D, \u043C\u043E\u0449\u043D\u043E \u0432\u0431\u043B\u0438\u0437\u0438. \u041B\u0435\u0436\u0438\u0442 \u0433\u0434\u0435-\u0442\u043E \u0432 \u0410\u0440\u0445\u0438\u0432\u0435.", w);
-    el("p", void 0, "\u26A1 \u0413\u0440\u0430\u0444-\u043B\u0430\u0437\u0435\u0440 \u2014 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0440\u0435\u043B\u044C\u043D\u044B\u0439 \u043B\u0443\u0447 \u044D\u043D\u0435\u0440\u0433\u0438\u0438. \u0421\u043F\u0440\u044F\u0442\u0430\u043D \u0432 \u0421\u0430\u0434\u0443 \u0417\u0430\u043C\u0435\u0442\u043E\u043A.", w);
-    el("h4", void 0, "\u041F\u0435\u0447\u0430\u0442\u0438", w);
-    el("p", void 0, "\u0414\u0432\u0435\u0440\u0438 \u043C\u0435\u0436\u0434\u0443 \u0437\u043E\u043D\u0430\u043C\u0438 \u043E\u0442\u043A\u0440\u044B\u0432\u0430\u044E\u0442\u0441\u044F, \u043A\u043E\u0433\u0434\u0430 \u0443 \u0432\u0430\u0441 \u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E \u043E\u0441\u043A\u043E\u043B\u043A\u043E\u0432: 1 \u2192 \u0421\u0430\u0434, 3 \u2192 \u0413\u0440\u0430\u0444, 5 \u2192 \u0411\u0438\u0442\u044B\u0435 \u0441\u0441\u044B\u043B\u043A\u0438, 6 \u2192 \u042F\u0434\u0440\u043E. \u0421\u0435\u0434\u044C\u043C\u043E\u0439 \u043E\u0441\u043A\u043E\u043B\u043E\u043A \u2014 \u0443 \u041F\u0443\u0441\u0442\u043E\u0439 \u0417\u0430\u043C\u0435\u0442\u043A\u0438.", w);
+    el("h4", void 0, tr("\u0410\u0440\u0441\u0435\u043D\u0430\u043B"), w);
+    el("p", void 0, tr("\u2712 \u041F\u0435\u0440\u043E \u2014 \u0431\u0435\u0441\u043A\u043E\u043D\u0435\u0447\u043D\u044B\u0435 \u0447\u0435\u0440\u043D\u0438\u043B\u0430, \u0434\u0432\u043E\u0439\u043D\u043E\u0439 \u0443\u0440\u043E\u043D \u0432\u043F\u043B\u043E\u0442\u043D\u0443\u044E."), w);
+    el("p", void 0, tr("[[ ]] Wikilink-\u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A \u2014 7 \u0441\u043A\u043E\u0431\u043E\u043A-\u0434\u0440\u043E\u0431\u0438\u043D, \u043C\u043E\u0449\u043D\u043E \u0432\u0431\u043B\u0438\u0437\u0438. \u041B\u0435\u0436\u0438\u0442 \u0433\u0434\u0435-\u0442\u043E \u0432 \u0410\u0440\u0445\u0438\u0432\u0435."), w);
+    el("p", void 0, tr("\u26A1 \u0413\u0440\u0430\u0444-\u043B\u0430\u0437\u0435\u0440 \u2014 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0440\u0435\u043B\u044C\u043D\u044B\u0439 \u043B\u0443\u0447 \u044D\u043D\u0435\u0440\u0433\u0438\u0438. \u0421\u043F\u0440\u044F\u0442\u0430\u043D \u0432 \u0421\u0430\u0434\u0443 \u0417\u0430\u043C\u0435\u0442\u043E\u043A."), w);
+    el("h4", void 0, tr("\u041F\u0435\u0447\u0430\u0442\u0438"), w);
+    el("p", void 0, tr("\u0414\u0432\u0435\u0440\u0438 \u043C\u0435\u0436\u0434\u0443 \u0437\u043E\u043D\u0430\u043C\u0438 \u043E\u0442\u043A\u0440\u044B\u0432\u0430\u044E\u0442\u0441\u044F, \u043A\u043E\u0433\u0434\u0430 \u0443 \u0432\u0430\u0441 \u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E \u043E\u0441\u043A\u043E\u043B\u043A\u043E\u0432: 1 \u2192 \u0421\u0430\u0434, 3 \u2192 \u0413\u0440\u0430\u0444, 5 \u2192 \u0411\u0438\u0442\u044B\u0435 \u0441\u0441\u044B\u043B\u043A\u0438, 6 \u2192 \u042F\u0434\u0440\u043E. \u0421\u0435\u0434\u044C\u043C\u043E\u0439 \u043E\u0441\u043A\u043E\u043B\u043E\u043A \u2014 \u0443 \u041F\u0443\u0441\u0442\u043E\u0439 \u0417\u0430\u043C\u0435\u0442\u043A\u0438."), w);
   }
   menuSettings(body) {
     const s = this.data.settings;
@@ -3567,14 +3839,25 @@ var Game = class {
       } catch {
       }
     };
-    const snd = el("input", void 0, void 0, row("\u0417\u0432\u0443\u043A"));
+    const language = el("select", void 0, void 0, row("Language / Язык"));
+    for (const [value, title] of [["en", "English"], ["ru", "Русский"]]) {
+      const option = el("option", void 0, title, language);
+      option.value = value;
+    }
+    language.value = s.language;
+    language.onchange = () => {
+      s.language = language.value;
+      save();
+      this.opts.onLanguageChanged?.();
+    };
+    const snd = el("input", void 0, void 0, row(tr("\u0417\u0432\u0443\u043A")));
     snd.type = "checkbox";
     snd.checked = s.sound;
     snd.onchange = () => {
       s.sound = snd.checked;
       save();
     };
-    const vol = el("input", void 0, void 0, row("\u0413\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C"));
+    const vol = el("input", void 0, void 0, row(tr("\u0413\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C")));
     vol.type = "range";
     vol.min = "0";
     vol.max = "1";
@@ -3584,7 +3867,7 @@ var Game = class {
       s.volume = +vol.value;
       save();
     };
-    const sen = el("input", void 0, void 0, row("\u0427\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043C\u044B\u0448\u0438"));
+    const sen = el("input", void 0, void 0, row(tr("\u0427\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043C\u044B\u0448\u0438")));
     sen.type = "range";
     sen.min = "0.2";
     sen.max = "3";
@@ -3594,8 +3877,8 @@ var Game = class {
       s.sensitivity = +sen.value;
       save();
     };
-    const dif = el("select", void 0, void 0, row("Сложность следующего забега"));
-    for (const [v, t] of [["easy", "Лёгкая"], ["normal", "Средняя"], ["hard", "Хард · 1 HP"]]) {
+    const dif = el("select", void 0, void 0, row(tr("Сложность следующего забега")));
+    for (const [v, t] of [["easy", tr("Лёгкая")], ["normal", tr("Средняя")], ["hard", tr("Хард · 1 HP")]]) {
       const op = el("option", void 0, t, dif);
       op.value = v;
     }
@@ -3604,8 +3887,8 @@ var Game = class {
       s.difficulty = dif.value;
       save();
     };
-    const res = el("select", void 0, void 0, row("\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0438\u0435 \u0440\u0435\u043D\u0434\u0435\u0440\u0430"));
-    for (const [v, t] of [["0.25", "25% \u2014 \u043C\u0430\u043A\u0441\u0438\u043C\u0430\u043B\u044C\u043D\u043E \u0431\u044B\u0441\u0442\u0440\u043E"], ["0.35", "35%"], ["0.5", "50% \u2014 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E"], ["0.75", "75%"], ["1", "100% \u2014 \u0447\u0451\u0442\u043A\u043E"]]) {
+    const res = el("select", void 0, void 0, row(tr("\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0438\u0435 \u0440\u0435\u043D\u0434\u0435\u0440\u0430")));
+    for (const [v, t] of [["0.25", tr("25% \u2014 \u043C\u0430\u043A\u0441\u0438\u043C\u0430\u043B\u044C\u043D\u043E \u0431\u044B\u0441\u0442\u0440\u043E")], ["0.35", "35%"], ["0.5", tr("50% \u2014 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E")], ["0.75", "75%"], ["1", tr("100% \u2014 \u0447\u0451\u0442\u043A\u043E")]]) {
       const op = el("option", void 0, t, res);
       op.value = v;
     }
@@ -3614,21 +3897,21 @@ var Game = class {
       s.resolution = +res.value;
       save();
     };
-    const nn = el("input", void 0, void 0, row("Имена заметок из хранилища"));
+    const nn = el("input", void 0, void 0, row(tr("Имена заметок из хранилища")));
     nn.type = "checkbox";
     nn.checked = s.useNoteNames;
     nn.onchange = () => {
       s.useNoteNames = nn.checked;
       save();
     };
-    const fp = el("input", void 0, void 0, row("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C FPS"));
+    const fp = el("input", void 0, void 0, row(tr("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C FPS")));
     fp.type = "checkbox";
     fp.checked = s.showFps;
     fp.onchange = () => {
       s.showFps = fp.checked;
       save();
     };
-    el("div", "vs-tip", "Эти же настройки доступны в Настройки → Сторонние плагины → HELLVAULT.", body);
+    el("div", "vs-tip", tr("Эти же настройки доступны в Настройки → Сторонние плагины → HELLVAULT."), body);
   }
   // ---------- Завершение ----------
   destroy() {
@@ -3649,6 +3932,7 @@ var Game = class {
 
 // src/game/types.ts
 var DEFAULT_SETTINGS = {
+  language: "en",
   sensitivity: 1,
   sound: true,
   volume: 0.6,
@@ -3673,6 +3957,9 @@ function mergeData(raw) {
   if (!raw || typeof raw !== "object") return d;
   const r = raw;
   if (r.settings) d.settings = { ...d.settings, ...r.settings };
+  // Saves created before language support keep their original Russian interface.
+  if (!r.settings || !Object.prototype.hasOwnProperty.call(r.settings, "language")) d.settings.language = "ru";
+  d.settings.language = d.settings.language === "en" ? "en" : "ru";
   if (r.progress) {
     d.progress.achievements = { ...r.progress.achievements || {} };
     d.progress.stats = { ...r.progress.stats || {} };
@@ -3715,6 +4002,7 @@ var ShardsView = class extends import_obsidian.ItemView {
       data: this.plugin.data,
       noteNames: this.plugin.noteNames(),
       getNoteNames: () => this.plugin.noteNames(),
+      onLanguageChanged: () => this.plugin.applySettings(),
       onSave: () => this.plugin.requestSave(),
       onExportLore: () => this.plugin.exportLore()
     });
@@ -3735,10 +4023,11 @@ var VaultShardsPlugin = class extends import_obsidian.Plugin {
   }
   async onload() {
     this.data = mergeData(await this.loadData());
+    setGameLanguage(this.data.settings.language);
     this.registerView(VIEW_TYPE_SHARDS, (leaf) => new ShardsView(leaf, this));
-    this.addRibbonIcon("gem", "Открыть HELLVAULT", () => this.openGame());
-    this.addCommand({ id: "open", name: "Открыть HELLVAULT", callback: () => this.openGame() });
-    this.addCommand({ id: "export-codex", name: "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u041A\u043E\u0434\u0435\u043A\u0441 \u0432 \u0437\u0430\u043C\u0435\u0442\u043A\u0443", callback: async () => {
+    this.ribbonIcon = this.addRibbonIcon("gem", tr("Открыть HELLVAULT"), () => this.openGame());
+    this.openCommand = this.addCommand({ id: "open", name: tr("Открыть HELLVAULT"), callback: () => this.openGame() });
+    this.exportCommand = this.addCommand({ id: "export-codex", name: tr("\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u041A\u043E\u0434\u0435\u043A\u0441 \u0432 \u0437\u0430\u043C\u0435\u0442\u043A\u0443"), callback: async () => {
       new import_obsidian.Notice(await this.exportLore());
     } });
     this.addSettingTab(new ShardsSettingTab(this.app, this));
@@ -3775,6 +4064,11 @@ var VaultShardsPlugin = class extends import_obsidian.Plugin {
     await this.saveData(this.data);
   }
   applySettings() {
+    setGameLanguage(this.data.settings.language);
+    if (this.ribbonIcon) this.ribbonIcon.setAttribute("aria-label", tr("Открыть HELLVAULT"));
+    const prefix = (this.manifest?.name || "HELLVAULT") + ": ";
+    if (this.openCommand) this.openCommand.name = prefix + tr("Открыть HELLVAULT");
+    if (this.exportCommand) this.exportCommand.name = prefix + tr("Экспортировать Кодекс в заметку");
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_SHARDS)) {
       const v = leaf.view;
       if (v instanceof ShardsView) v.applySettings(this.data.settings);
@@ -3792,7 +4086,7 @@ var VaultShardsPlugin = class extends import_obsidian.Plugin {
     } else file = await this.app.vault.create(path, md);
     await this.app.workspace.getLeaf("tab").openFile(file);
     const n = LORE.filter((l) => this.data.progress.lore.includes(l.id)).length;
-    return `\u041A\u043E\u0434\u0435\u043A\u0441 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D \u0432 \xAB${path}\xBB (${n}/${LORE.length} \u0437\u0430\u043F\u0438\u0441\u0435\u0439)`;
+    return tr`\u041A\u043E\u0434\u0435\u043A\u0441 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D \u0432 \xAB${path}\xBB (${n}/${LORE.length} \u0437\u0430\u043F\u0438\u0441\u0435\u0439)`;
   }
 };
 var ShardsSettingTab = class extends import_obsidian.PluginSettingTab {
@@ -3804,33 +4098,38 @@ var ShardsSettingTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     const s = this.plugin.data.settings;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("\u0427\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043C\u044B\u0448\u0438").setDesc("\u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u043F\u043E\u0432\u043E\u0440\u043E\u0442\u0430 \u043A\u0430\u043C\u0435\u0440\u044B \u043C\u044B\u0448\u044C\u044E.").addSlider((sl) => sl.setLimits(0.2, 3, 0.1).setValue(s.sensitivity).setDynamicTooltip().onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName("Language / Язык").addDropdown((d) => d.addOptions({ en: "English", ru: "Русский" }).setValue(s.language).onChange((v) => {
+      s.language = v;
+      this.plugin.applySettings();
+      this.display();
+    }));
+    new import_obsidian.Setting(containerEl).setName(tr("\u0427\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043C\u044B\u0448\u0438")).setDesc(tr("\u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u043F\u043E\u0432\u043E\u0440\u043E\u0442\u0430 \u043A\u0430\u043C\u0435\u0440\u044B \u043C\u044B\u0448\u044C\u044E.")).addSlider((sl) => sl.setLimits(0.2, 3, 0.1).setValue(s.sensitivity).setDynamicTooltip().onChange((v) => {
       s.sensitivity = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("\u0417\u0432\u0443\u043A").setDesc("\u0421\u0438\u043D\u0442\u0435\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0437\u0432\u0443\u043A\u043E\u0432\u044B\u0435 \u044D\u0444\u0444\u0435\u043A\u0442\u044B (WebAudio).").addToggle((t) => t.setValue(s.sound).onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("\u0417\u0432\u0443\u043A")).setDesc(tr("\u0421\u0438\u043D\u0442\u0435\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0437\u0432\u0443\u043A\u043E\u0432\u044B\u0435 \u044D\u0444\u0444\u0435\u043A\u0442\u044B (WebAudio).")).addToggle((t) => t.setValue(s.sound).onChange((v) => {
       s.sound = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("\u0413\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C").addSlider((sl) => sl.setLimits(0, 1, 0.05).setValue(s.volume).setDynamicTooltip().onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("\u0413\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C")).addSlider((sl) => sl.setLimits(0, 1, 0.05).setValue(s.volume).setDynamicTooltip().onChange((v) => {
       s.volume = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Сложность").setDesc("Применяется к следующему новому забегу: лёгкая — прежняя обычная, средняя — прежняя тяжёлая, хард — 1 HP и усиленные враги.").addDropdown((d) => d.addOptions({ easy: "Лёгкая", normal: "Средняя", hard: "Хард · 1 HP" }).setValue(s.difficulty).onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("Сложность")).setDesc(tr("Применяется к следующему новому забегу: лёгкая — прежняя обычная, средняя — прежняя тяжёлая, хард — 1 HP и усиленные враги.")).addDropdown((d) => d.addOptions({ easy: tr("Лёгкая"), normal: tr("Средняя"), hard: tr("Хард · 1 HP") }).setValue(s.difficulty).onChange((v) => {
       s.difficulty = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0438\u0435 \u0440\u0435\u043D\u0434\u0435\u0440\u0430").setDesc("\u0414\u043E\u043B\u044F \u043E\u0442 \u0440\u0430\u0437\u043C\u0435\u0440\u0430 \u0432\u043A\u043B\u0430\u0434\u043A\u0438. \u041C\u0435\u043D\u044C\u0448\u0435 \u2014 \u0431\u044B\u0441\u0442\u0440\u0435\u0435 \u0438 \xAB\u043F\u0438\u043A\u0441\u0435\u043B\u044C\u043D\u0435\u0435\xBB.").addDropdown((d) => d.addOptions({ "0.25": "25%", "0.35": "35%", "0.5": "50% (\u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E)", "0.75": "75%", "1": "100%" }).setValue(String(s.resolution)).onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0438\u0435 \u0440\u0435\u043D\u0434\u0435\u0440\u0430")).setDesc(tr("\u0414\u043E\u043B\u044F \u043E\u0442 \u0440\u0430\u0437\u043C\u0435\u0440\u0430 \u0432\u043A\u043B\u0430\u0434\u043A\u0438. \u041C\u0435\u043D\u044C\u0448\u0435 \u2014 \u0431\u044B\u0441\u0442\u0440\u0435\u0435 \u0438 \xAB\u043F\u0438\u043A\u0441\u0435\u043B\u044C\u043D\u0435\u0435\xBB.")).addDropdown((d) => d.addOptions({ "0.25": "25%", "0.35": "35%", "0.5": tr("50% (\u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E)"), "0.75": "75%", "1": "100%" }).setValue(String(s.resolution)).onChange((v) => {
       s.resolution = Number(v);
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Имена заметок из хранилища").setDesc("Названия заметок используются в именах Сирот и Дубликатов и на надгробиях. Выбранные ниже папки исключаются.").addToggle((t) => t.setValue(s.useNoteNames).onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("Имена заметок из хранилища")).setDesc(tr("Названия заметок используются в именах Сирот и Дубликатов и на надгробиях. Выбранные ниже папки исключаются.")).addToggle((t) => t.setValue(s.useNoteNames).onChange((v) => {
       s.useNoteNames = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Исключить папки из имён в игре").setDesc("Отмеченные папки и все их вложенные папки не используются для имён врагов и надгробий. Изменения сразу применяются в открытой игре.").setHeading();
+    new import_obsidian.Setting(containerEl).setName(tr("Исключить папки из имён в игре")).setDesc(tr("Отмеченные папки и все их вложенные папки не используются для имён врагов и надгробий. Изменения сразу применяются в открытой игре.")).setHeading();
     const folders = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof import_obsidian.TFolder && f.path && f.path !== "/").sort((a, b) => a.path.localeCompare(b.path, "ru"));
-    if (!folders.length) new import_obsidian.Setting(containerEl).setName("В хранилище нет папок");
+    if (!folders.length) new import_obsidian.Setting(containerEl).setName(tr("В хранилище нет папок"));
     for (const folder of folders) {
       new import_obsidian.Setting(containerEl).setName(folder.path).addToggle((t) => t.setValue(s.excludedFolders.includes(folder.path)).onChange((v) => {
         const selected = new Set(normalizeExcludedFolders(s.excludedFolders));
@@ -3839,16 +4138,16 @@ var ShardsSettingTab = class extends import_obsidian.PluginSettingTab {
         this.plugin.applySettings();
       }));
     }
-    new import_obsidian.Setting(containerEl).setName("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C FPS").addToggle((t) => t.setValue(s.showFps).onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C FPS")).addToggle((t) => t.setValue(s.showFps).onChange((v) => {
       s.showFps = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0432\u0435\u0441\u044C \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441").setDesc("\u0423\u0434\u0430\u043B\u044F\u0435\u0442 \u0437\u0430\u0431\u0435\u0433, \u0434\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F \u0438 \u043E\u0442\u043A\u0440\u044B\u0442\u044B\u0439 \u041A\u043E\u0434\u0435\u043A\u0441. \u0417\u0430\u043A\u0440\u043E\u0439\u0442\u0435 \u0432\u043A\u043B\u0430\u0434\u043A\u0443 \u0438\u0433\u0440\u044B \u043F\u0435\u0440\u0435\u0434 \u0441\u0431\u0440\u043E\u0441\u043E\u043C.").addButton((b) => b.setButtonText("\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C").setWarning().onClick(async () => {
+    new import_obsidian.Setting(containerEl).setName(tr("\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0432\u0435\u0441\u044C \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441")).setDesc(tr("\u0423\u0434\u0430\u043B\u044F\u0435\u0442 \u0437\u0430\u0431\u0435\u0433, \u0434\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F \u0438 \u043E\u0442\u043A\u0440\u044B\u0442\u044B\u0439 \u041A\u043E\u0434\u0435\u043A\u0441. \u0417\u0430\u043A\u0440\u043E\u0439\u0442\u0435 \u0432\u043A\u043B\u0430\u0434\u043A\u0443 \u0438\u0433\u0440\u044B \u043F\u0435\u0440\u0435\u0434 \u0441\u0431\u0440\u043E\u0441\u043E\u043C.")).addButton((b) => b.setButtonText(tr("\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C")).setWarning().onClick(async () => {
       this.plugin.app.workspace.detachLeavesOfType(VIEW_TYPE_SHARDS);
       const keep = this.plugin.data.settings;
       this.plugin.data = mergeData({ settings: keep });
       await this.plugin.flushSave();
-      new import_obsidian.Notice("Прогресс HELLVAULT сброшен");
+      new import_obsidian.Notice(tr("Прогресс HELLVAULT сброшен"));
     }));
   }
 };
