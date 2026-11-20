@@ -1,7 +1,7 @@
 /* HELLVAULT */
-.vs-view { padding: 0 !important; overflow: hidden; }
+.workspace-leaf-content[data-type="vault-shards-view"] .view-content.vs-view { padding: 0; overflow: hidden; }
 .vs-root { position: relative; width: 100%; height: 100%; min-height: 320px; background: #07030d; }
-.vs-wrap { position: absolute; inset: 0; outline: none; overflow: hidden; user-select: none; font-family: ui-monospace, "JetBrains Mono", Consolas, monospace; }
+.vs-wrap { position: absolute; inset: 0; outline: none; overflow: hidden; user-select: none; font-family: "JetBrains Mono", Consolas, monospace; }
 .vs-canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; cursor: crosshair; }
 
 .vs-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
@@ -28,7 +28,7 @@
 .vs-btn.vs-danger { background: rgba(190, 18, 60, 0.6); border-color: #fb7185; }
 .vs-stats, .vs-meta { display: flex; gap: 8px 18px; flex-wrap: wrap; justify-content: center; font-size: 13px; color: #d8c8fa; margin: 10px 0; }
 .vs-stats span { background: rgba(0, 0, 0, 0.3); padding: 4px 10px; border-radius: 6px; }
-.vs-link { background: none; border: none; color: #e9d5ff; text-decoration: underline dotted; padding: 0; font-size: 13px; box-shadow: none; height: auto; }
+.vs-link { background: none; border: none; color: #e9d5ff; border-bottom: 1px dotted currentColor; padding: 0; font-size: 13px; box-shadow: none; height: auto; }
 .vs-tip { text-align: center; font-size: 12px; color: #a78bfa; margin-top: 12px; opacity: .85; }
 .vs-win-title { text-align: center; color: #fde68a; letter-spacing: .15em; text-shadow: 0 0 14px #f59e0b; margin: 4px 0 10px; }
 
@@ -58,7 +58,7 @@
 .vs-codex-view h3 { margin: 2px 0 10px; color: #fff; font-size: 20px; }
 .vs-codex-view p { line-height: 1.65; font-size: 14px; color: #e4d9fb; font-family: Georgia, "Times New Roman", serif; }
 .vs-codex-kicker { font-size: 11px; color: #e879f9; letter-spacing: .15em; text-transform: uppercase; }
-.vs-locked-text { color: #8b7aae !important; font-style: italic; }
+.vs-codex-view p.vs-locked-text { color: #8b7aae; font-style: italic; }
 
 .vs-controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
 .vs-ctrl { display: flex; gap: 10px; align-items: center; font-size: 13px; }

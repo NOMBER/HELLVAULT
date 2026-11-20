@@ -1,9 +1,9 @@
 {
   "id": "vault-shards",
-  "name": "HELLVAULT",
-  "version": "1.0.0",
+  "name": "Hellvault",
+  "version": "1.1.0",
   "minAppVersion": "1.4.0",
-  "description": "Obsidian shooter: story, linear path, and arena / Шутер в Obsidian: сюжет, линейный путь и арена.",
+  "description": "A Doom-like shooter with a story campaign, linear path, and endless arena.",
   "author": "Хранитель",
   "isDesktopOnly": true
 }

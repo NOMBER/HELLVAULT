@@ -49,12 +49,18 @@ Requires **Obsidian 1.4.0 or newer** on a desktop computer.
 
 1. [Download the plugin archive from the latest release](https://github.com/NOMBER/HELLVAULT/releases/latest) and extract it.
 2. Create `<your vault>/.obsidian/plugins/vault-shards/` and copy `main.js`, `manifest.json`, and `styles.css` into it.
-3. In Obsidian, open **Settings → Community plugins**, refresh the list, and enable **HELLVAULT**.
+3. In Obsidian, open **Settings → Community plugins**, refresh the list, and enable **Hellvault**.
 4. Launch the game with the crystal icon or the **Open HELLVAULT** command.
 
-When updating, keep your existing `data.json`: it contains your progress, settings, and records. Keep the `vault-shards` folder name for compatibility with earlier versions. If you installed a test build numbered `2.1.0` or the original `1.0.0`, replace the plugin files manually: Obsidian will not automatically update to the same or a lower version.
+When updating, keep your existing `data.json`: it contains your progress, settings, and records. Keep the `vault-shards` folder name for compatibility with earlier versions. If you installed a test build numbered `2.1.0`, replace the plugin files manually: Obsidian will not automatically update to a lower version.
 
 **Language / Язык:** switch between English and Russian in the game settings or the plugin settings. New installations start in English; existing saves keep Russian.
+
+## 🌐 Vault access and optional OBSIGAMA sync
+
+HELLVAULT works offline. When note names are enabled, the game lists Markdown note titles for enemy names and gravestones; you can exclude folders or turn the feature off in the plugin settings. It does not read note contents for this feature. The optional Codex export creates or replaces its generated note in the vault.
+
+[OBSIGAMA](https://github.com/NOMBER/ObsiGama) is an optional gaming hub. **Connect to OBSIGAMA** is off by default. If you install the hub and enable the switch in **Settings → Hellvault**, the game shares run counts, playtime, enemy kills, deaths, victories, collected pages, achievements, and arena/story records with the local hub. With an account and online sync enabled, OBSIGAMA may send that information to its Supabase service for profiles and leaderboards. Note names and vault contents are not included. Your progress remains local while the switch is off; without the hub or an online connection it remains available locally and can be synced later.
 
 ## ⌨️ Controls
 
@@ -69,7 +75,7 @@ When updating, keep your existing `data.json`: it contains your progress, settin
 | **M / Tab** | map |
 | **Esc** | pause and menu |
 
-The repository contains the bundled plugin code in `main.js`. Run the localization checks with `node --test tests/localization.test.js`.
+The original game is maintained as the existing bundled JavaScript in `src/hellvault.js`; the OBSIGAMA integration and SDK are TypeScript. Run `npm ci`, then `npm run build` to generate `main.js` and `npm test` to run the checks. The SDK is copied from [ObsiGama](https://github.com/NOMBER/ObsiGama/tree/sdk-v0.1.0/packages/sdk) under its [MIT license](src/obsigama/sdk/LICENSE).
 
 <p align="center"><b>Your Vault can still be saved. ◆</b></p>
 

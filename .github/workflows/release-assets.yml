@@ -24,6 +24,17 @@ jobs:
         with:
           ref: ${{ inputs.commit }}
           persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify reproducible build and tests
+        run: |
+          npm ci
+          npm run build
+          git diff --exit-code -- main.js
+          npm test
       - name: Build plugin files, ZIP and checksums
         env:
           RELEASE_TAG: ${{ inputs.tag }}
