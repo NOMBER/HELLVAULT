@@ -33,7 +33,7 @@ Corruption has severed the connections between notes and reached the Core. Take 
 - **Familiar enemies:** Orphans, Broken Links, Duplicates, Spam Tags, and the Blank Note.
 - **Three difficulties:** from Easy to Hard, where the Keeper has just **1 HP**.
 - **Explore and collect:** secrets, a Codex, 12 diary pages, and 21 achievements.
-- **Your vault becomes part of the game:** some enemies and gravestones use the names of your notes. Exclude folders in the settings or turn this feature off.
+- **Your vault becomes part of the game:** some enemies and gravestones use the names of notes open in tabs. Exclude folders in the settings or turn this feature off.
 
 ## 📸 In-game
 
@@ -47,10 +47,12 @@ Corruption has severed the connections between notes and reached the Core. Take 
 
 Requires **Obsidian 1.4.0 or newer** on a desktop computer.
 
-1. [Download the plugin archive from the latest release](https://github.com/NOMBER/HELLVAULT/releases/latest) and extract it.
-2. Create `<your vault>/.obsidian/plugins/vault-shards/` and copy `main.js`, `manifest.json`, and `styles.css` into it.
+1. [Download `main.js`, `manifest.json`, and `styles.css` from the latest release](https://github.com/NOMBER/HELLVAULT/releases/latest).
+2. Create `<your vault>/.obsidian/plugins/vault-shards/` and copy the three files into it.
 3. In Obsidian, open **Settings → Community plugins**, refresh the list, and enable **Hellvault**.
 4. Launch the game with the crystal icon or the **Open HELLVAULT** command.
+
+Release files include GitHub provenance attestations; for example, verify `main.js` with `gh attestation verify main.js --repo NOMBER/HELLVAULT`.
 
 When updating, keep your existing `data.json`: it contains your progress, settings, and records. Keep the `vault-shards` folder name for compatibility with earlier versions. If you installed a test build numbered `2.1.0`, replace the plugin files manually: Obsidian will not automatically update to a lower version.
 
@@ -58,9 +60,9 @@ When updating, keep your existing `data.json`: it contains your progress, settin
 
 ## 🌐 Vault access and optional OBSIGAMA sync
 
-HELLVAULT works offline. When note names are enabled, the game lists Markdown note titles for enemy names and gravestones; you can exclude folders or turn the feature off in the plugin settings. It does not read note contents for this feature. The optional Codex export creates or replaces its generated note in the vault.
+HELLVAULT works offline. When note names are enabled, the game uses titles of Markdown notes open in tabs for enemy names and gravestones. It does not enumerate the vault or read note contents for this feature. You can turn it off or enter vault-relative folder paths to exclude, one per line, in the plugin settings. The optional Codex export creates or replaces its generated note in the vault.
 
-[OBSIGAMA](https://github.com/NOMBER/ObsiGama) is an optional gaming hub. **Connect to OBSIGAMA** is off by default. If you install the hub and enable the switch in **Settings → Hellvault**, the game shares run counts, playtime, enemy kills, deaths, victories, collected pages, achievements, and arena/story records with the local hub. With an account and online sync enabled, OBSIGAMA may send that information to its Supabase service for profiles and leaderboards. Note names and vault contents are not included. Your progress remains local while the switch is off; without the hub or an online connection it remains available locally and can be synced later.
+[OBSIGAMA](https://github.com/NOMBER/ObsiGama) is an optional gaming hub. **Connect to OBSIGAMA** is off by default. If you install the hub and enable the switch in **Settings → Hellvault**, the game shares run counts, active gameplay time (excluding pauses and menus), enemy kills, deaths, victories, collected pages, achievements, and arena/story records with the local hub. With an account and online sync enabled, OBSIGAMA may send that information to its Supabase service for profiles and leaderboards. Note names and vault contents are not included. Your progress remains local while the switch is off; without the hub or an online connection it remains available locally and can be synced later.
 
 ## ⌨️ Controls
 

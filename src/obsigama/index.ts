@@ -34,7 +34,8 @@ export class HellvaultObsigama {
   client!: SClient;
   /** progress.stats at the moment of the last report; deltas are computed against it */
   private base: Record<string, number> = {};
-  private since = Date.now();
+  /** Active simulation time not yet reported to the SDK, in milliseconds. */
+  private activeMs = 0;
 
   /** VaultShardsPlugin.onload(), right after `this.data = mergeData(...)`. Never throws. */
   static async init(plugin: Plugin, data: HellvaultData): Promise<HellvaultObsigama> {
@@ -61,8 +62,9 @@ export class HellvaultObsigama {
 
   /** After "reset all progress" in the settings tab: start counting from the new (empty) data. */
   rebase(d: HellvaultData): void {
+    this.flushActiveTime();
     this.base = { ...d.progress.stats };
-    this.since = Date.now();
+    this.activeMs = 0;
   }
 
   private collect(d: HellvaultData): Record<string, number> {
@@ -77,6 +79,28 @@ export class HellvaultObsigama {
     return out;
   }
 
+  /** Called only while the game is actively updating a run, never in menus or on pause. */
+  recordActiveTime(seconds: number): void {
+    if (Number.isFinite(seconds) && seconds > 0) this.activeMs += seconds * 1000;
+  }
+
+  private takeActiveTime(): number {
+    const wholeMs = Math.floor(this.activeMs);
+    this.activeMs -= wholeMs;
+    return wholeMs;
+  }
+
+  /** Record unfinished active time without creating a run or making a network request. */
+  flushActiveTime(): void {
+    let remaining = this.takeActiveTime();
+    const maxDelta = 14_400_000;
+    while (remaining > 0) {
+      const part = Math.min(remaining, maxDelta);
+      this.client.reportStat("playtime_ms", part);
+      remaining -= part;
+    }
+  }
+
   /**
    * Call once when a run ends, AFTER the game updated its own data:
    *   story  -> end of Game.win() (only when `first` is true, so a replayed win screen does not count twice)
@@ -85,9 +109,15 @@ export class HellvaultObsigama {
    * One lightweight request when "Подключить к OBSIGAMA" is on; otherwise it is only queued locally.
    */
   endRun(d: HellvaultData, kind: RunKind, run: RunInfo): void {
-    const playtime = Math.max(0, Date.now() - this.since);
-    this.since = Date.now();
-    const stats: Record<string, number> = { ...this.collect(d), runs: 1, playtime_ms: Math.min(playtime, 14_400_000) };
+    let activeMs = this.takeActiveTime();
+    // The manifest permits at most four hours in each stat event.
+    while (activeMs > 14_400_000) {
+      this.client.reportStat("playtime_ms", 14_400_000);
+      activeMs -= 14_400_000;
+    }
+    const stats: Record<string, number> = { ...this.collect(d), runs: 1, playtime_ms: activeMs };
+    // The run's own clock excludes pauses and survives closing and reopening the view.
+    const durationMs = Number.isFinite(run.time) ? Math.max(0, Math.min(Math.round(run.time * 1000), 86_400_000)) : 0;
     const scores: Record<string, number> = {};
     if (kind === "arena") {
       stats.arena_runs = 1;
@@ -97,11 +127,12 @@ export class HellvaultObsigama {
     if (kind === "story" && run.time >= 60) scores.fastest_win_s = Math.round(run.time);
     // All 21 HELLVAULT achievements are stat rules in the manifest: the SDK and the server unlock them
     // from the stats above, so no achievement ids are sent (claims for rule achievements would be rejected).
-    void this.client.endRun({ durationMs: stats.playtime_ms, stats, scores });
+    void this.client.endRun({ durationMs, stats, scores });
   }
 
   /** ShardsView.onClose(): progress made in an unfinished run is queued (no network, not counted as a run). */
   flushPartial(d: HellvaultData): void {
+    this.flushActiveTime();
     for (const [id, v] of Object.entries(this.collect(d))) this.client.reportStat(id, v);
   }
 

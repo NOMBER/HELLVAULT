@@ -160,3 +160,88 @@ test("game remains playable with no OBSIGAMA hub", async () => {
     assert.equal(bridge.client.getStats().kills, 2);
   } finally { bridge.client.destroy(); }
 });
+
+test("playtime counts only active updates and excludes menu, pause, and death", () => {
+  let activeSeconds = 0;
+  const game = {
+    state: "playing", mode: "story", time: 0, run: { time: 0 },
+    opts: { onActiveTime(dt) { activeSeconds += dt; } },
+    data: { settings: { sensitivity: 1 } }, keys: new Set(), pa: 0, mdx: 0,
+    px: 0, py: 0, zone: 0, zoneAt: () => 0,
+    msgs: [], explored: new Uint8Array(4096),
+    updateDoors() {}, updateItems() { this.state = "menu"; },
+  };
+  context.Game.prototype.update.call(game, 2.25);
+  assert.equal(game.run.time, 2.25);
+  assert.equal(activeSeconds, 2.25);
+  context.Game.prototype.update.call(game, 3_600);
+  assert.equal(game.run.time, 2.25, "menu time must not enter the run clock");
+  assert.equal(activeSeconds, 2.25, "menu time must not enter OBSIGAMA playtime");
+  game.state = "dead";
+  game.deadT = 10;
+  game.hurtT = 0;
+  context.Game.prototype.update.call(game, 3);
+  assert.equal(game.run.time, 2.25, "death animation is not active gameplay");
+  assert.equal(activeSeconds, 2.25);
+  game.state = "playing";
+  context.Game.prototype.update.call(game, 1.75);
+  assert.equal(game.run.time, 4);
+  assert.equal(activeSeconds, 4);
+});
+
+test("partial active time survives a reload and the completed run does not count it twice", async () => {
+  const hub = fakeHub();
+  const { plugin, files } = fakePlugin(hub);
+  const data = context.mergeData(null);
+  let bridge = await context.HELLVAULT_OBSIGAMA.HellvaultObsigama.init(plugin, data);
+  try {
+    await bridge.client.setConnect(true);
+    bridge.recordActiveTime(12.5);
+    bridge.flushActiveTime(); // Pause: no run completed.
+    bridge.flushPartial(data); // Close the view after a long pause.
+    assert.equal(bridge.client.getStats().playtime_ms, 12_500);
+    assert.equal(bridge.client.getStats().runs, undefined);
+    bridge.client.destroy();
+    await waitUntil(() => [...files.values()].some((raw) => JSON.parse(raw).stats.playtime_ms === 12_500));
+    bridge = await context.HELLVAULT_OBSIGAMA.HellvaultObsigama.init(plugin, data);
+    assert.equal(bridge.client.getStats().playtime_ms, 12_500);
+    bridge.recordActiveTime(7.5);
+    bridge.endRun(data, "linear", { kills: 0, time: 20 });
+    await waitUntil(() => hub.sent.some((batch) => batch.events.some((event) => event.type === "session")));
+    assert.equal(bridge.client.getStats().playtime_ms, 20_000);
+    const events = hub.sent.flatMap((batch) => batch.events);
+    assert.equal(events.filter((event) => event.type === "session").length, 1);
+    assert.equal(events.find((event) => event.type === "session").payload.durationMs, 20_000);
+    assert.equal(events.filter((event) => event.type === "stat" && event.payload.id === "playtime_ms").reduce((sum, event) => sum + event.payload.value, 0), 20_000);
+  } finally { bridge.client.destroy(); }
+});
+
+test("note names come only from open Markdown tabs and respect excluded folders", () => {
+  const open = [
+    { view: { file: { path: "Visible/Hello.md", basename: "Hello", extension: "md" } } },
+    { view: { file: { path: "Private/Nested/Secret.md", basename: "Secret", extension: "md" } } },
+    { view: { file: { path: "Visible/Image.png", basename: "Image", extension: "png" } } },
+  ];
+  const plugin = {
+    data: { settings: { useNoteNames: true, excludedFolders: ["Private"] } },
+    app: {
+      vault: new Proxy({}, { get() { throw new Error("Vault enumeration is not allowed"); } }),
+      workspace: { getLeavesOfType(type) { assert.equal(type, "markdown"); return open; }, getActiveFile() { return open[0].view.file; } },
+    },
+  };
+  assert.deepEqual(Array.from(context.VaultShardsPlugin.prototype.noteNames.call(plugin)), ["Hello"]);
+  plugin.data.settings.useNoteNames = false;
+  assert.deepEqual(Array.from(context.VaultShardsPlugin.prototype.noteNames.call(plugin)), []);
+});
+
+test("resetting game progress keeps active playtime already earned", async () => {
+  const { plugin } = fakePlugin(null);
+  const data = context.mergeData(null);
+  const bridge = await context.HELLVAULT_OBSIGAMA.HellvaultObsigama.init(plugin, data);
+  try {
+    bridge.recordActiveTime(3.25);
+    bridge.rebase(context.mergeData(null));
+    assert.equal(bridge.client.getStats().playtime_ms, 3250);
+    assert.equal(bridge.client.getStats().runs, undefined);
+  } finally { bridge.client.destroy(); }
+});

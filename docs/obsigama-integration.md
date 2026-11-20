@@ -1,6 +1,6 @@
 # OBSIGAMA integration notes
 
-HELLVAULT keeps its existing `vault-shards` plugin ID and `data.json` save format. The game bundle in `src/hellvault.js` calls the integration when a story, linear, or arena run ends and flushes partial progress when the view closes or the plugin unloads. The unmodified upstream example in `src/obsigama/index.ts`, apart from its SDK import path, creates `SClient`, imports existing totals, reports runs and partial progress, and provides the settings UI. The vendored SDK handles discovery, consent, the opt-in switch, offline storage, and sync. Its state is separate in `obsigama-sync.json`.
+HELLVAULT keeps its existing `vault-shards` plugin ID and `data.json` save format. The game bundle in `src/hellvault.js` calls the integration when a story, linear, or arena run ends and flushes partial progress when the view closes or the plugin unloads. The integration in `src/obsigama/index.ts`, adapted from the upstream example, creates `SClient`, imports existing totals, reports runs and partial progress, and provides the settings UI. The vendored SDK handles discovery, consent, the opt-in switch, offline storage, and sync. Its state is separate in `obsigama-sync.json`.
 
 ## Verification
 
@@ -10,6 +10,6 @@ HELLVAULT keeps its existing `vault-shards` plugin ID and `data.json` save forma
 
 ## Upstream limits and open questions
 
-The exact SDK and integration example from `sdk-v0.1.0` were retained as requested. The example's `playtime_ms` uses wall-clock time since initialization or the previous report, including time in menus, and caps each report at four hours. Accurate active-run timing needs a coordinated change to the upstream example.
+The SDK from `sdk-v0.1.0` remains unchanged. The integration uses the game loop to count active simulation time only; pauses, menus, and the death animation do not add playtime. Time accumulated before a pause or view close is recorded without completing the run, and the resumed run does not count that time twice. The SDK and server impose a four-hour maximum per playtime stat event; the SDK can merge queued events before sync, so unusually large offline totals can still be capped server-side. Previously synchronized wall-clock totals cannot be corrected retroactively without reliable historical data.
 
 The provided manifest limits arena wave scores to 1,000 and kills per arena run to 20,000; higher scores are rejected by the SDK rather than sent to the leaderboard. Story times outside 60–86,400 seconds are also outside the leaderboard limits. These limits should be reviewed with the OBSIGAMA server before changing the shared manifest. Counter deltas also have manifest-defined caps. All 21 achievement IDs match the game.

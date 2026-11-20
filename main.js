@@ -1226,7 +1226,8 @@ var HELLVAULT_OBSIGAMA = (() => {
       __publicField(this, "client");
       /** progress.stats at the moment of the last report; deltas are computed against it */
       __publicField(this, "base", {});
-      __publicField(this, "since", Date.now());
+      /** Active simulation time not yet reported to the SDK, in milliseconds. */
+      __publicField(this, "activeMs", 0);
     }
     /** VaultShardsPlugin.onload(), right after `this.data = mergeData(...)`. Never throws. */
     static async init(plugin, data) {
@@ -1251,8 +1252,9 @@ var HELLVAULT_OBSIGAMA = (() => {
     }
     /** After "reset all progress" in the settings tab: start counting from the new (empty) data. */
     rebase(d) {
+      this.flushActiveTime();
       this.base = { ...d.progress.stats };
-      this.since = Date.now();
+      this.activeMs = 0;
     }
     collect(d) {
       const s = d.progress.stats;
@@ -1265,6 +1267,25 @@ var HELLVAULT_OBSIGAMA = (() => {
       this.base = { ...s };
       return out;
     }
+    /** Called only while the game is actively updating a run, never in menus or on pause. */
+    recordActiveTime(seconds) {
+      if (Number.isFinite(seconds) && seconds > 0) this.activeMs += seconds * 1e3;
+    }
+    takeActiveTime() {
+      const wholeMs = Math.floor(this.activeMs);
+      this.activeMs -= wholeMs;
+      return wholeMs;
+    }
+    /** Record unfinished active time without creating a run or making a network request. */
+    flushActiveTime() {
+      let remaining = this.takeActiveTime();
+      const maxDelta = 144e5;
+      while (remaining > 0) {
+        const part = Math.min(remaining, maxDelta);
+        this.client.reportStat("playtime_ms", part);
+        remaining -= part;
+      }
+    }
     /**
      * Call once when a run ends, AFTER the game updated its own data:
      *   story  -> end of Game.win() (only when `first` is true, so a replayed win screen does not count twice)
@@ -1273,9 +1294,13 @@ var HELLVAULT_OBSIGAMA = (() => {
      * One lightweight request when "Подключить к OBSIGAMA" is on; otherwise it is only queued locally.
      */
     endRun(d, kind, run) {
-      const playtime = Math.max(0, Date.now() - this.since);
-      this.since = Date.now();
-      const stats = { ...this.collect(d), runs: 1, playtime_ms: Math.min(playtime, 144e5) };
+      let activeMs = this.takeActiveTime();
+      while (activeMs > 144e5) {
+        this.client.reportStat("playtime_ms", 144e5);
+        activeMs -= 144e5;
+      }
+      const stats = { ...this.collect(d), runs: 1, playtime_ms: activeMs };
+      const durationMs = Number.isFinite(run.time) ? Math.max(0, Math.min(Math.round(run.time * 1e3), 864e5)) : 0;
       const scores = {};
       if (kind === "arena") {
         stats.arena_runs = 1;
@@ -1283,10 +1308,11 @@ var HELLVAULT_OBSIGAMA = (() => {
         if (run.kills > 0) scores.arena_kills = Math.floor(run.kills);
       }
       if (kind === "story" && run.time >= 60) scores.fastest_win_s = Math.round(run.time);
-      void this.client.endRun({ durationMs: stats.playtime_ms, stats, scores });
+      void this.client.endRun({ durationMs, stats, scores });
     }
     /** ShardsView.onClose(): progress made in an unfinished run is queued (no network, not counted as a run). */
     flushPartial(d) {
+      this.flushActiveTime();
       for (const [id, v] of Object.entries(this.collect(d))) this.client.reportStat(id, v);
     }
     /** In ShardsSettingTab.display(); returns a dispose function for hide(). */
@@ -2788,7 +2814,9 @@ var EN_RUNTIME = {
   "Применяется к следующему новому забегу: лёгкая — прежняя обычная, средняя — прежняя тяжёлая, хард — 1 HP и усиленные враги.": "Applies to the next new run: Easy matches the old Normal; Normal matches the old Hard; Hard gives you 1 HP and stronger enemies.",
   "Доля от размера вкладки. Меньше — быстрее и «пиксельнее».": "Fraction of the view size. Lower is faster and more pixelated.",
   "50% (по умолчанию)": "50% (default)",
-  "Названия заметок используются в именах Сирот и Дубликатов и на надгробиях. Выбранные ниже папки исключаются.": "Note titles are used for Orphans, Duplicates, and gravestones. Folders selected below are excluded.",
+  "Названия открытых заметок используются в именах Сирот и Дубликатов и на надгробиях. Исключите нужные папки ниже.": "Titles of open notes are used for Orphans, Duplicates, and gravestones. Exclude folders below.",
+  "Укажите пути папок относительно хранилища, по одному на строку. Вложенные папки тоже исключаются.": "Enter vault-relative folder paths, one per line. Subfolders are excluded too.",
+  "Одна папка на строку": "One folder per line",
   "Исключить папки из имён в игре": "Exclude folders from in-game names",
   "Отмеченные папки и все их вложенные папки не используются для имён врагов и надгробий. Изменения сразу применяются в открытой игре.": "Notes in selected folders and their subfolders are excluded from enemy names and gravestones. Changes apply to open games immediately.",
   "В хранилище нет папок": "There are no folders in this vault",
@@ -3726,7 +3754,10 @@ var Game = class {
       }
       return;
     }
+    if (this.state !== "playing") return;
     this.run.time += dt;
+    try { this.opts.onActiveTime?.(dt); }
+    catch (e) { console.warn("[HELLVAULT] OBSIGAMA active time", e); }
     const s = this.data.settings;
     let turn = 0;
     if (this.keys.has("ArrowLeft")) turn -= 1;
@@ -4878,6 +4909,8 @@ var Game = class {
     if (this.state === "playing") {
       this.state = "menu";
       this.persist();
+      try { this.opts.onRunPause?.(); }
+      catch (e) { console.warn("[HELLVAULT] OBSIGAMA pause", e); }
     }
     if (tab === "win") this.state = "win";
     else if (this.state !== "win") this.state = "menu";
@@ -5318,6 +5351,8 @@ var ShardsView = class extends import_obsidian.ItemView {
       getNoteNames: () => this.plugin.noteNames(),
       onLanguageChanged: () => this.plugin.applySettings(),
       onSave: () => this.plugin.requestSave(),
+      onActiveTime: (seconds) => this.plugin.obsigama?.recordActiveTime(seconds),
+      onRunPause: () => this.plugin.obsigama?.flushActiveTime(),
       onRunEnd: (kind, run) => this.plugin.obsigama?.endRun(this.plugin.data, kind, run),
       onExportLore: () => this.plugin.exportLore()
     });
@@ -5364,7 +5399,11 @@ var VaultShardsPlugin = class extends import_obsidian.Plugin {
   noteNames() {
     if (!this.data.settings.useNoteNames) return [];
     const excluded = normalizeExcludedFolders(this.data.settings.excludedFolders);
-    return this.app.vault.getMarkdownFiles().filter((f) => !noteIsExcluded(f.path, excluded)).map((f) => f.basename).filter((n) => n && n.length <= 40 && n !== "Осколки Хранилища — Кодекс").slice(0, 400);
+    const openFiles = this.app.workspace.getLeavesOfType("markdown").map((leaf) => leaf.view?.file);
+    const active = this.app.workspace.getActiveFile();
+    if (active) openFiles.push(active);
+    const names = openFiles.filter((f) => f && f.extension === "md" && !noteIsExcluded(f.path, excluded)).map((f) => f.basename).filter((n) => n && n.length <= 40 && n !== "Осколки Хранилища — Кодекс");
+    return [...new Set(names)].slice(0, 400);
   }
   async openGame() {
     const { workspace } = this.app;
@@ -5451,32 +5490,14 @@ var ShardsSettingTab = class extends import_obsidian.PluginSettingTab {
       s.resolution = Number(v);
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName(tr("Имена заметок из хранилища")).setDesc(tr("Названия заметок используются в именах Сирот и Дубликатов и на надгробиях. Выбранные ниже папки исключаются.")).addToggle((t) => t.setValue(s.useNoteNames).onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("Имена заметок из хранилища")).setDesc(tr("Названия открытых заметок используются в именах Сирот и Дубликатов и на надгробиях. Исключите нужные папки ниже.")).addToggle((t) => t.setValue(s.useNoteNames).onChange((v) => {
       s.useNoteNames = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName(tr("Исключить папки из имён в игре")).setDesc(tr("Отмеченные папки и все их вложенные папки не используются для имён врагов и надгробий. Изменения сразу применяются в открытой игре.")).setHeading();
-    const folders = [];
-    const pendingFolders = [this.app.vault.getRoot()];
-    while (pendingFolders.length) {
-      const parent = pendingFolders.pop();
-      for (const child of parent.children) {
-        if (child instanceof import_obsidian.TFolder) {
-          folders.push(child);
-          pendingFolders.push(child);
-        }
-      }
-    }
-    folders.sort((a, b) => a.path.localeCompare(b.path, "ru"));
-    if (!folders.length) new import_obsidian.Setting(containerEl).setName(tr("В хранилище нет папок"));
-    for (const folder of folders) {
-      new import_obsidian.Setting(containerEl).setName(folder.path).addToggle((t) => t.setValue(s.excludedFolders.includes(folder.path)).onChange((v) => {
-        const selected = new Set(normalizeExcludedFolders(s.excludedFolders));
-        if (v) selected.add(folder.path); else selected.delete(folder.path);
-        s.excludedFolders = [...selected];
-        this.plugin.applySettings();
-      }));
-    }
+    new import_obsidian.Setting(containerEl).setName(tr("Исключить папки из имён в игре")).setDesc(tr("Укажите пути папок относительно хранилища, по одному на строку. Вложенные папки тоже исключаются.")).addTextArea((t) => t.setPlaceholder(tr("Одна папка на строку")).setValue(s.excludedFolders.join("\n")).onChange((v) => {
+      s.excludedFolders = normalizeExcludedFolders(v.split("\n"));
+      this.plugin.applySettings();
+    }));
     new import_obsidian.Setting(containerEl).setName(tr("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C FPS")).addToggle((t) => t.setValue(s.showFps).onChange((v) => {
       s.showFps = v;
       this.plugin.applySettings();
