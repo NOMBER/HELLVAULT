@@ -4,7 +4,7 @@ name: Build and attach release assets
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing draft release tag (for example, v2.1.0)
+        description: Existing draft release tag (for example, 1.0.0)
         required: true
         type: string
       commit:
@@ -39,7 +39,7 @@ jobs:
           source = Path('.')
           manifest = json.loads((source / 'manifest.json').read_text(encoding='utf-8'))
           tag = os.environ['RELEASE_TAG']
-          if tag != 'v' + manifest['version']:
+          if tag != manifest['version']:
               raise SystemExit('Release tag does not match manifest version')
           out = Path('release-assets')
           out.mkdir(exist_ok=True)

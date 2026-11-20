@@ -52,7 +52,7 @@ Requires **Obsidian 1.4.0 or newer** on a desktop computer.
 3. In Obsidian, open **Settings → Community plugins**, refresh the list, and enable **HELLVAULT**.
 4. Launch the game with the crystal icon or the **Open HELLVAULT** command.
 
-When updating, keep your existing `data.json`: it contains your progress, settings, and records. Keep the `vault-shards` folder name for compatibility with earlier versions.
+When updating, keep your existing `data.json`: it contains your progress, settings, and records. Keep the `vault-shards` folder name for compatibility with earlier versions. If you installed a test build numbered `2.1.0` or the original `1.0.0`, replace the plugin files manually: Obsidian will not automatically update to the same or a lower version.
 
 **Language / Язык:** switch between English and Russian in the game settings or the plugin settings. New installations start in English; existing saves keep Russian.
 
