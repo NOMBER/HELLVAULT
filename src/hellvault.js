@@ -1324,6 +1324,32 @@ var WEAPONS = [
 // UI and narrative localization. IDs and save data remain language-independent.
 var GAME_LANGUAGE = "ru";
 var EN_RUNTIME = {
+  "Игрок": "Player",
+  "убил": "killed",
+  "Убийства": "Kills",
+  "ЖУРНАЛ УБИЙСТВ": "KILL LOG",
+  "Здесь появятся побеждённые враги и ссылки на их заметки.": "Defeated enemies and links to their notes will appear here.",
+  "Последние 1000 убийств хранятся локально. Нажмите на название заметки, чтобы открыть её.": "The last 1,000 kills are stored locally. Click a note name to open it.",
+  "Заметка не найдена": "Note not found",
+  "число": "number",
+  "Громкость эффектов": "Effects volume",
+  "Музыка": "Music",
+  "Громкость музыки": "Music volume",
+  "Отдельная композиция для каждого режима игры.": "A different original track for each game mode.",
+  "Индексируются названия Markdown-заметок; содержимое не читается. Папки можно включить или исключить ниже.": "Markdown note titles are indexed without reading their contents. Include or exclude folders below.",
+  "Только из выбранных папок": "Only from selected folders",
+  "Оставьте пустым для всего хранилища. Вложенные папки включаются.": "Leave empty to include the whole vault. Subfolders are included.",
+  "Исключения действуют также внутри выбранных папок и их подпапок.": "Exclusions also apply inside selected folders and their subfolders.",
+  "Индексация заметок": "Note indexing",
+  "Доступно заметок: {0}": "Available notes: {0}",
+  "Подходящих заметок нет — используются стандартные имена.": "No matching notes; default names are being used.",
+  "Имена заметок выключены.": "Note names are disabled.",
+  "Обновить индекс": "Refresh index",
+  "Выберите папки": "Choose folders",
+  "Выбрать папки": "Choose folders",
+  "Поиск папки": "Search folders",
+  "Отмена": "Cancel",
+  "Применить": "Apply",
   "# HELLVAULT — Кодекс": "# HELLVAULT — Codex",
   "> Экспорт из игры «HELLVAULT». Открыто записей: {0}/{1}.": "> Exported from HELLVAULT. Entries unlocked: {0}/{1}.",
   "*Не открыто. Подсказка: {0}*": "*Locked. Hint: {0}*",
@@ -1656,10 +1682,15 @@ function normalizeExcludedFolders(value) {
 function noteIsExcluded(path, folders) {
   return folders.some((folder) => path === folder || path.startsWith(folder + "/"));
 }
+function settingNumber(value, fallback, min, max) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
+}
 
 var Game = class {
   constructor(root, opts) {
     this.sfx = new Sfx();
+    this.music = new MusicPlayer();
     this.img = null;
     this.buf = new Uint32Array(0);
     this.zbuf = new Float32Array(0);
@@ -1767,6 +1798,8 @@ var Game = class {
     this.lowCtx = this.low.getContext("2d");
     this.overlay = el("div", "vs-overlay", void 0, this.wrap);
     this.toasts = el("div", "vs-toasts", void 0, this.wrap);
+    this.killFeed = el("div", "vs-kill-feed", void 0, this.wrap);
+    this.killFeed.setAttribute("aria-live", "polite");
     for (const id of ALWAYS_LORE) if (!this.data.progress.lore.includes(id)) this.data.progress.lore.push(id);
     this.applySettings(this.data.settings);
     if (this.data.run) this.loadRun(this.data.run);
@@ -1834,15 +1867,26 @@ var Game = class {
     };
   }
   refreshNames() {
-    const source = this.opts.getNoteNames ? this.opts.getNoteNames() : (this.opts.noteNames || []);
-    const pool = this.data.settings.useNoteNames && source.length ? source : FALLBACK_NAMES;
-    const rng = mulberry32(42);
-    this.names = [...pool].sort(() => rng() - 0.5);
-    if (this.names.length < 4) this.names.push(...FALLBACK_NAMES);
+    const source = this.opts.getNoteEntries ? this.opts.getNoteEntries() :
+      (this.opts.getNoteNames ? this.opts.getNoteNames() : (this.opts.noteNames || []));
+    if (!this.noteEntries || this.nameSource !== source || this.nameLanguage !== GAME_LANGUAGE || this.nameSetting !== this.data.settings.useNoteNames) {
+      const available = Array.isArray(source) ? source.map((note) => typeof note === "string" ? { name: note, path: null } : note).filter((note) => note && typeof note.name === "string" && note.name) : [];
+      const pool = this.data.settings.useNoteNames && available.length ? available : FALLBACK_NAMES.map((name) => ({ name, path: null }));
+      const rng = mulberry32(42);
+      this.noteEntries = [...pool];
+      for (let i = this.noteEntries.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [this.noteEntries[i], this.noteEntries[j]] = [this.noteEntries[j], this.noteEntries[i]];
+      }
+      this.names = this.noteEntries.map((note) => note.name);
+      this.noteEntriesByPath = new Map(this.noteEntries.filter((note) => note.path).map((note) => [note.path, note]));
+      this.nameSource = source;
+      this.nameLanguage = GAME_LANGUAGE;
+      this.nameSetting = this.data.settings.useNoteNames;
+    }
+    const byPath = this.noteEntriesByPath;
     if (this.enemies) this.enemies.forEach((e, i) => {
-      const d = EDEF[e.type];
-      const nm = this.names[i % this.names.length];
-      e.name = e.type === "orphan" ? `${d.name} «${nm}»` : e.type === "dup" ? `${d.name} «${nm} (1)»` : d.name;
+      this.assignEnemyNote(e, byPath.get(e.notePath) || this.noteEntries[i % this.noteEntries.length]);
     });
     if (this.decor && this.art) {
       let i = 0;
@@ -1851,6 +1895,14 @@ var Game = class {
         d.tex = this.art.makeTomb(d.text);
       }
     }
+  }
+  assignEnemyNote(enemy, note) {
+    const type = EDEF[enemy.type];
+    if (!type) return;
+    const showName = enemy.type !== "boss" && note && (note.path || enemy.type === "orphan" || enemy.type === "dup");
+    enemy.noteName = showName ? note.name : null;
+    enemy.notePath = showName ? note.path || null : null;
+    enemy.name = showName ? `${type.name} «${note.name}${enemy.type === "dup" ? " (1)" : ""}»` : type.name;
   }
   startMode(mode, fresh = false) {
     if (mode === "arena" && !this.data.progress.arenaUnlocked) return;
@@ -2054,6 +2106,8 @@ var Game = class {
     setGameLanguage(s.language);
     this.sfx.enabled = s.sound;
     this.sfx.volume = s.volume;
+    this.music.configure(s.music, s.musicVolume);
+    if (this.state === "playing") this.music.start(this.mode);
     if (this.names) this.refreshNames();
     if (languageChanged) {
       this.msgs = [];
@@ -2196,9 +2250,7 @@ var Game = class {
   makeEnemy(type, x, y, spawnId, ni, parent = 0) {
     const d = EDEF[type];
     const hm = this.diff().hp * (this.mode === "arena" ? 1 + 0.13 * Math.max(0, this.run.wave - 1) : 1);
-    const nm = this.names[ni % this.names.length];
-    const name = type === "orphan" ? `${d.name} \xAB${nm}\xBB` : type === "dup" ? `${d.name} \xAB${nm} (1)\xBB` : d.name;
-    return {
+    const enemy = {
       uid: this.uid++,
       spawnId,
       type,
@@ -2217,10 +2269,12 @@ var Game = class {
       shootT: 1 + Math.random(),
       summonT: 6,
       parent,
-      name,
+      name: d.name,
       atkT: 0,
       summoned: false
     };
+    this.assignEnemyNote(enemy, this.noteEntries[ni % this.noteEntries.length]);
+    return enemy;
   }
   diff() {
     const d = this.run?.difficulty || this.data.settings.difficulty;
@@ -2621,13 +2675,45 @@ var Game = class {
     this.sfx.play("hit");
     if (e.hp <= 0 && !e.dead) this.killEnemy(e);
   }
+  recordKill(enemy) {
+    let player = tr("Игрок");
+    try { player = this.opts.getPlayerName?.() || player; } catch {}
+    player = String(player).slice(0, 80);
+    const entry = {
+      type: enemy.type,
+      noteName: enemy.noteName || null,
+      notePath: enemy.notePath || null,
+      player,
+      mode: this.mode,
+      time: Math.max(0, Math.floor(this.run.time || 0)),
+      at: Date.now()
+    };
+    const log = this.data.progress.killLog || (this.data.progress.killLog = []);
+    log.push(entry);
+    if (log.length > 1000) log.splice(0, log.length - 1000);
+    if (this.killFeed) {
+      const item = el("div", "vs-kill-feed-item", void 0, this.killFeed);
+      el("span", "vs-kill-feed-player", player, item);
+      el("span", void 0, ` ${tr("убил")} `, item);
+      el("span", "vs-kill-feed-enemy", (EDEF[entry.type]?.name || entry.type) + (entry.noteName ? ` — ${entry.noteName}` : ""), item);
+      while (this.killFeed.children.length > 4) this.killFeed.firstElementChild?.remove();
+      const timer = window.setTimeout(() => {
+        item.remove();
+        this.timeouts = this.timeouts.filter((id) => id !== timer);
+      }, 4500);
+      this.timeouts.push(timer);
+    }
+    try { this.opts.onSave?.(this.data); } catch (e) { console.warn("[HELLVAULT] Kill log save", e); }
+  }
   killEnemy(e) {
+    if (e.dead) return;
     e.dead = true;
     e.deathT = 0;
     this.sfx.play("edeath");
     this.run.kills++;
     this.stat("kills");
     this.stat("k_" + e.type);
+    this.recordKill(e);
     if (this.cur === 0) this.stat("k_quill");
     if (e.spawnId >= 0) this.run.deadSpawns.push(e.spawnId);
     this.unlockLore("st_rot");
@@ -2637,6 +2723,7 @@ var Game = class {
       this.sfx.play("split");
       for (let k = 0; k < 2; k++) {
         const c = this.makeEnemy("copy", e.x, e.y, -1, 0, e.uid);
+        if (e.noteName) this.assignEnemyNote(c, { name: e.noteName, path: e.notePath });
         const a = Math.random() * TAU;
         this.moveBody(c, Math.cos(a) * 0.4, Math.sin(a) * 0.4, 0.25);
         c.awake = true;
@@ -2693,6 +2780,7 @@ var Game = class {
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = "dead";
+      this.music?.pause();
       this.deadT = 3;
       this.run.deaths++;
       this.stat("deaths");
@@ -2716,6 +2804,7 @@ var Game = class {
     this.energy = Math.max(this.energy, this.weapons[2] ? 40 : 0);
     this.projs = [];
     this.state = "playing";
+    this.music?.start(this.mode);
     this.lowHp = false;
     for (const e of this.enemies) if (!e.dead && Math.hypot(e.x - this.px, e.y - this.py) < 6) e.awake = false;
     const b = this.enemies.find((e) => e.type === "boss" && !e.dead);
@@ -3577,6 +3666,7 @@ var Game = class {
   }
   // ---------- Меню (DOM) ----------
   openMenu(tab) {
+    this.music?.pause();
     if (this.state === "playing") {
       this.state = "menu";
       this.persist();
@@ -3607,6 +3697,7 @@ var Game = class {
     }
     this.zone = -1;
     this.sfx.unlock();
+    this.music?.start(this.mode);
     this.wrap.focus();
     this.lock();
     this.last = performance.now();
@@ -3620,7 +3711,7 @@ var Game = class {
     el("div", "vs-logo", "HELLVAULT", head);
     el("div", "vs-logo-sub", tr("◆ ИГРА ВНУТРИ OBSIDIAN ◆"), head);
     const tabs = el("div", "vs-tabs", void 0, panel);
-    const tabDefs = [["main", this.state === "win" ? tr("Победа") : tr("Игра")], ["ach", tr("Достижения")], ["codex", tr("Кодекс")], ["records", tr("Рекорды")], ["controls", tr("Управление")], ["settings", tr("Настройки")]];
+    const tabDefs = [["main", this.state === "win" ? tr("Победа") : tr("Игра")], ["kills", tr("Убийства")], ["ach", tr("Достижения")], ["codex", tr("Кодекс")], ["records", tr("Рекорды")], ["controls", tr("Управление")], ["settings", tr("Настройки")]];
     for (const [id, title] of tabDefs) {
       const active = this.tab === id || id === "main" && this.tab === "win";
       const b = el("button", "vs-tab" + (active ? " vs-active" : ""), title, tabs);
@@ -3637,6 +3728,7 @@ var Game = class {
     else if (this.tab === "gameover") this.menuGameOver(body);
     else if (this.tab === "linearwin") this.menuLinearWin(body);
     else if (this.tab === "records") this.menuRecords(body);
+    else if (this.tab === "kills") this.menuKills(body);
     else if (this.tab === "ach") this.menuAch(body);
     else if (this.tab === "codex") this.menuCodex(body);
     else if (this.tab === "controls") this.menuControls(body);
@@ -3716,6 +3808,29 @@ var Game = class {
       const tr = el("tr", void 0, void 0, table);
       for (const value of [i + 1, r.wave, r.kills, fmtTime(r.time), { easy: tr("Лёгкая"), normal: tr("Средняя"), hard: tr("Хард") }[r.difficulty] || r.difficulty, new Date(r.date).toLocaleDateString(gameLocale())]) el("td", void 0, String(value), tr);
     });
+  }
+  menuKills(body) {
+    el("h2", "vs-win-title", tr("ЖУРНАЛ УБИЙСТВ"), body);
+    const log = this.data.progress.killLog || [];
+    if (!log.length) {
+      el("p", "vs-intro", tr("Здесь появятся побеждённые враги и ссылки на их заметки."), body);
+      return;
+    }
+    el("p", "vs-intro", tr("Последние 1000 убийств хранятся локально. Нажмите на название заметки, чтобы открыть её."), body);
+    const list = el("div", "vs-kill-log", void 0, body);
+    for (const entry of [...log].reverse()) {
+      const row = el("div", "vs-kill-row", void 0, list);
+      el("span", "vs-kill-time", fmtTime(entry.time || 0), row);
+      el("span", "vs-kill-player", entry.player || tr("Игрок"), row);
+      el("span", "vs-kill-type", EDEF[entry.type]?.name || entry.type, row);
+      if (entry.noteName) {
+        if (entry.notePath && this.opts.onOpenNote) {
+          const link = el("button", "vs-link vs-kill-note", entry.noteName, row);
+          link.title = entry.notePath;
+          link.onclick = () => { void Promise.resolve(this.opts.onOpenNote(entry.notePath)).catch((e) => console.warn("[HELLVAULT] Open note", e)); };
+        } else el("span", "vs-kill-note", entry.noteName, row);
+      }
+    }
   }
   menuGameOver(body) {
     el("h2", "vs-win-title", tr("ЗАБЕГ ЗАВЕРШЁН"), body);
@@ -3857,6 +3972,29 @@ var Game = class {
       } catch {
       }
     };
+    const numberRange = (label, key, min, max, step, percent = false) => {
+      const controls = el("div", "vs-range-control", void 0, row(label));
+      const range = el("input", void 0, void 0, controls);
+      const number = el("input", "vs-range-number", void 0, controls);
+      range.type = "range";
+      number.type = "number";
+      for (const input of [range, number]) {
+        input.min = String(min); input.max = String(max); input.step = String(step);
+      }
+      range.setAttribute("aria-label", label);
+      number.setAttribute("aria-label", `${label} · ${tr("число")}`);
+      const current = () => percent ? Math.round(s[key] * 100) : s[key];
+      range.value = number.value = String(current());
+      const commit = (input) => {
+        const value = input.value.trim() === "" ? current() : settingNumber(input.value, current(), min, max);
+        s[key] = percent ? value / 100 : value;
+        range.value = number.value = String(value);
+        save();
+      };
+      range.oninput = () => commit(range);
+      number.onchange = () => commit(number);
+      if (percent) el("span", "vs-range-suffix", "%", controls);
+    };
     const language = el("select", void 0, void 0, row("Language / Язык"));
     for (const [value, title] of [["en", "English"], ["ru", "Русский"]]) {
       const option = el("option", void 0, title, language);
@@ -3875,26 +4013,13 @@ var Game = class {
       s.sound = snd.checked;
       save();
     };
-    const vol = el("input", void 0, void 0, row(tr("\u0413\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C")));
-    vol.type = "range";
-    vol.min = "0";
-    vol.max = "1";
-    vol.step = "0.05";
-    vol.value = String(s.volume);
-    vol.oninput = () => {
-      s.volume = +vol.value;
-      save();
-    };
-    const sen = el("input", void 0, void 0, row(tr("\u0427\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043C\u044B\u0448\u0438")));
-    sen.type = "range";
-    sen.min = "0.2";
-    sen.max = "3";
-    sen.step = "0.1";
-    sen.value = String(s.sensitivity);
-    sen.oninput = () => {
-      s.sensitivity = +sen.value;
-      save();
-    };
+    numberRange(tr("Громкость эффектов"), "volume", 0, 100, 1, true);
+    const music = el("input", void 0, void 0, row(tr("Музыка")));
+    music.type = "checkbox";
+    music.checked = s.music;
+    music.onchange = () => { s.music = music.checked; save(); };
+    numberRange(tr("Громкость музыки"), "musicVolume", 0, 100, 1, true);
+    numberRange(tr("Чувствительность мыши"), "sensitivity", 0.2, 3, 0.01);
     const dif = el("select", void 0, void 0, row(tr("Сложность следующего забега")));
     for (const [v, t] of [["easy", tr("Лёгкая")], ["normal", tr("Средняя")], ["hard", tr("Хард · 1 HP")]]) {
       const op = el("option", void 0, t, dif);
@@ -3943,6 +4068,7 @@ var Game = class {
     this.ro?.disconnect();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
     this.sfx.close();
+    this.music?.close();
     this.root.replaceChildren();
     this.root.classList.remove("vs-root");
   }
@@ -3954,16 +4080,19 @@ var DEFAULT_SETTINGS = {
   sensitivity: 1,
   sound: true,
   volume: 0.6,
+  music: true,
+  musicVolume: 0.35,
   difficulty: "normal",
   resolution: 0.5,
   useNoteNames: true,
+  includedFolders: [],
   excludedFolders: [],
   showFps: false
 };
 function defaultData() {
   return {
     settings: { ...DEFAULT_SETTINGS },
-    progress: { achievements: {}, stats: {}, lore: [], arenaUnlocked: false },
+    progress: { achievements: {}, stats: {}, lore: [], killLog: [], arenaUnlocked: false },
     runs: { story: null, linear: null, arena: null },
     records: [],
     lastMode: "story",
@@ -3975,6 +4104,10 @@ function mergeData(raw) {
   if (!raw || typeof raw !== "object") return d;
   const r = raw;
   if (r.settings) d.settings = { ...d.settings, ...r.settings };
+  if (r.settings && !Object.prototype.hasOwnProperty.call(r.settings, "music") && r.settings.sound === false) d.settings.music = false;
+  d.settings.volume = settingNumber(d.settings.volume, 0.6, 0, 1);
+  d.settings.musicVolume = settingNumber(d.settings.musicVolume, 0.35, 0, 1);
+  d.settings.sensitivity = settingNumber(d.settings.sensitivity, 1, 0.2, 3);
   // Saves created before language support keep their original Russian interface.
   if (!r.settings || !Object.prototype.hasOwnProperty.call(r.settings, "language")) d.settings.language = "ru";
   d.settings.language = d.settings.language === "en" ? "en" : "ru";
@@ -3982,7 +4115,9 @@ function mergeData(raw) {
     d.progress.achievements = { ...r.progress.achievements || {} };
     d.progress.stats = { ...r.progress.stats || {} };
     d.progress.lore = Array.isArray(r.progress.lore) ? [...r.progress.lore] : [];
+    d.progress.killLog = Array.isArray(r.progress.killLog) ? r.progress.killLog.filter((entry) => entry && typeof entry.type === "string").slice(-1000) : [];
   }
+  d.settings.includedFolders = normalizeExcludedFolders(d.settings.includedFolders);
   d.settings.excludedFolders = normalizeExcludedFolders(d.settings.excludedFolders);
   if (r.runs && typeof r.runs === "object") {
     for (const mode of ["story", "linear", "arena"]) d.runs[mode] = r.runs[mode] || null;
@@ -4020,6 +4155,9 @@ var ShardsView = class extends import_obsidian.ItemView {
       data: this.plugin.data,
       noteNames: this.plugin.noteNames(),
       getNoteNames: () => this.plugin.noteNames(),
+      getNoteEntries: () => this.plugin.noteEntries(),
+      getPlayerName: () => this.plugin.playerName(),
+      onOpenNote: (path) => this.plugin.openNote(path),
       onLanguageChanged: () => this.plugin.applySettings(),
       onSave: () => this.plugin.requestSave(),
       onActiveTime: (seconds) => this.plugin.obsigama?.recordActiveTime(seconds),
@@ -4044,9 +4182,28 @@ var VaultShardsPlugin = class extends import_obsidian.Plugin {
     super(...arguments);
     this.saveTimer = null;
     this.obsigama = null;
+    this.noteIndex = null;
+    this.filteredNoteIndex = null;
+    this.noteFilterKey = "";
   }
   async onload() {
     this.data = mergeData(await this.loadData());
+    for (const event of ["create", "delete"]) {
+      this.registerEvent(this.app.vault.on(event, () => this.invalidateNoteIndex()));
+    }
+    this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+      let changed = false;
+      for (const entry of this.data.progress.killLog) {
+        if (typeof entry.notePath === "string" && (entry.notePath === oldPath || entry.notePath.startsWith(oldPath + "/"))) {
+          const exact = entry.notePath === oldPath;
+          entry.notePath = file.path + entry.notePath.slice(oldPath.length);
+          if (exact && typeof file.basename === "string") entry.noteName = file.basename;
+          changed = true;
+        }
+      }
+      if (changed) this.requestSave();
+      this.invalidateNoteIndex();
+    }));
     setGameLanguage(this.data.settings.language);
     this.registerView(VIEW_TYPE_SHARDS, (leaf) => new ShardsView(leaf, this));
     this.ribbonIcon = this.addRibbonIcon("gem", tr("Открыть HELLVAULT"), () => this.openGame());
@@ -4067,14 +4224,45 @@ var VaultShardsPlugin = class extends import_obsidian.Plugin {
     this.obsigama = null;
     await this.flushSave();
   }
-  noteNames() {
+  invalidateNoteIndex(refreshGame = true) {
+    this.noteIndex = null;
+    this.filteredNoteIndex = null;
+    if (refreshGame) {
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_SHARDS)) leaf.view?.game?.refreshNames();
+    }
+  }
+  noteEntries() {
     if (!this.data.settings.useNoteNames) return [];
+    const included = normalizeExcludedFolders(this.data.settings.includedFolders);
     const excluded = normalizeExcludedFolders(this.data.settings.excludedFolders);
-    const openFiles = this.app.workspace.getLeavesOfType("markdown").map((leaf) => leaf.view?.file);
-    const active = this.app.workspace.getActiveFile();
-    if (active) openFiles.push(active);
-    const names = openFiles.filter((f) => f && f.extension === "md" && !noteIsExcluded(f.path, excluded)).map((f) => f.basename).filter((n) => n && n.length <= 40 && n !== "Осколки Хранилища — Кодекс");
-    return [...new Set(names)].slice(0, 400);
+    const key = JSON.stringify([included, excluded]);
+    if (this.filteredNoteIndex && this.noteFilterKey === key) return this.filteredNoteIndex;
+    if (!this.noteIndex) {
+      this.noteIndex = this.app.vault.getMarkdownFiles()
+        .filter((file) => file && typeof file.path === "string" && typeof file.basename === "string" && file.basename && file.path !== EXPORT_PATH)
+        .map((file) => ({ name: file.basename, path: file.path }));
+    }
+    this.noteFilterKey = key;
+    this.filteredNoteIndex = this.noteIndex.filter((note) => (!included.length || noteIsExcluded(note.path, included)) && !noteIsExcluded(note.path, excluded));
+    return this.filteredNoteIndex;
+  }
+  noteNames() {
+    return this.noteEntries().map((note) => note.name);
+  }
+  playerName() {
+    try {
+      const status = this.app.plugins?.getPlugin?.("obsigama")?.api?.getStatus?.();
+      if (status?.signedIn && typeof status.username === "string" && status.username.trim()) return "@" + status.username.trim().replace(/^@+/, "");
+    } catch {}
+    return tr("Игрок");
+  }
+  async openNote(path) {
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof import_obsidian.TFile)) {
+      new import_obsidian.Notice(tr("Заметка не найдена"));
+      return;
+    }
+    await this.app.workspace.getLeaf("tab").openFile(file);
   }
   async openGame() {
     const { workspace } = this.app;
@@ -4130,6 +4318,73 @@ var ShardsSettingTab = class extends import_obsidian.PluginSettingTab {
     super(app, plugin);
     this.plugin = plugin;
   }
+  addNumericSetting(name, key, min, max, step, percent = false) {
+    const s = this.plugin.data.settings;
+    const value = () => percent ? Math.round(s[key] * 100) : s[key];
+    let slider, input;
+    const apply = (raw) => {
+      const next = raw === "" ? value() : settingNumber(raw, value(), min, max);
+      s[key] = percent ? next / 100 : next;
+      slider?.setValue(next);
+      if (input) input.value = String(next);
+      this.plugin.applySettings();
+    };
+    new import_obsidian.Setting(this.containerEl).setName(name).addSlider((component) => {
+      slider = component;
+      component.setLimits(min, max, step).setValue(value()).setDynamicTooltip().onChange((v) => apply(v));
+    }).addText((component) => {
+      input = component.inputEl;
+      input.type = "number"; input.min = String(min); input.max = String(max); input.step = String(step);
+      input.value = String(value());
+      input.classList.add("vs-settings-number");
+      input.setAttribute("aria-label", `${name} · ${tr("число")}${percent ? " (%)" : ""}`);
+      input.addEventListener("change", () => apply(input.value));
+    });
+  }
+  chooseFolders(key) {
+    const modal = new import_obsidian.Modal(this.app);
+    const selected = new Set(normalizeExcludedFolders(this.plugin.data.settings[key]));
+    const folders = [], pending = [this.app.vault.getRoot()];
+    while (pending.length) {
+      for (const child of pending.pop().children) {
+        if (child instanceof import_obsidian.TFolder) { folders.push(child.path); pending.push(child); }
+      }
+    }
+    folders.sort((a, b) => a.localeCompare(b));
+    modal.onOpen = () => {
+      modal.titleEl.textContent = tr("Выберите папки");
+      const content = modal.contentEl;
+      content.empty();
+      const search = el("input", "vs-folder-search", void 0, content);
+      search.type = "search"; search.placeholder = tr("Поиск папки");
+      search.setAttribute("aria-label", tr("Поиск папки"));
+      const list = el("div", "vs-folder-list", void 0, content);
+      const render = () => {
+        list.replaceChildren();
+        for (const folder of folders.filter((path) => path.toLocaleLowerCase().includes(search.value.toLocaleLowerCase()))) {
+          const row = el("label", "vs-folder-option", void 0, list);
+          const box = el("input", void 0, void 0, row);
+          box.type = "checkbox"; box.checked = selected.has(folder);
+          box.onchange = () => { if (box.checked) selected.add(folder); else selected.delete(folder); };
+          el("span", void 0, folder, row);
+        }
+      };
+      search.oninput = render;
+      render();
+      const actions = el("div", "vs-folder-actions", void 0, content);
+      const cancel = el("button", void 0, tr("Отмена"), actions);
+      cancel.onclick = () => modal.close();
+      const apply = el("button", "mod-cta", tr("Применить"), actions);
+      apply.onclick = () => {
+        this.plugin.data.settings[key] = [...selected];
+        this.plugin.applySettings();
+        modal.close();
+        this.display();
+      };
+    };
+    modal.onClose = () => modal.contentEl.empty();
+    modal.open();
+  }
   display() {
     this.disposeObsigama?.();
     this.disposeObsigama = null;
@@ -4141,18 +4396,17 @@ var ShardsSettingTab = class extends import_obsidian.PluginSettingTab {
       this.plugin.applySettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName(tr("\u0427\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043C\u044B\u0448\u0438")).setDesc(tr("\u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u043F\u043E\u0432\u043E\u0440\u043E\u0442\u0430 \u043A\u0430\u043C\u0435\u0440\u044B \u043C\u044B\u0448\u044C\u044E.")).addSlider((sl) => sl.setLimits(0.2, 3, 0.1).setValue(s.sensitivity).setDynamicTooltip().onChange((v) => {
-      s.sensitivity = v;
-      this.plugin.applySettings();
-    }));
+    this.addNumericSetting(tr("Чувствительность мыши"), "sensitivity", 0.2, 3, 0.01);
     new import_obsidian.Setting(containerEl).setName(tr("\u0417\u0432\u0443\u043A")).setDesc(tr("\u0421\u0438\u043D\u0442\u0435\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0437\u0432\u0443\u043A\u043E\u0432\u044B\u0435 \u044D\u0444\u0444\u0435\u043A\u0442\u044B (WebAudio).")).addToggle((t) => t.setValue(s.sound).onChange((v) => {
       s.sound = v;
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName(tr("\u0413\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C")).addSlider((sl) => sl.setLimits(0, 1, 0.05).setValue(s.volume).setDynamicTooltip().onChange((v) => {
-      s.volume = v;
+    this.addNumericSetting(tr("Громкость эффектов"), "volume", 0, 100, 1, true);
+    new import_obsidian.Setting(containerEl).setName(tr("Музыка")).setDesc(tr("Отдельная композиция для каждого режима игры.")).addToggle((t) => t.setValue(s.music).onChange((v) => {
+      s.music = v;
       this.plugin.applySettings();
     }));
+    this.addNumericSetting(tr("Громкость музыки"), "musicVolume", 0, 100, 1, true);
     new import_obsidian.Setting(containerEl).setName(tr("Сложность")).setDesc(tr("Применяется к следующему новому забегу: лёгкая — прежняя обычная, средняя — прежняя тяжёлая, хард — 1 HP и усиленные враги.")).addDropdown((d) => d.addOptions({ easy: tr("Лёгкая"), normal: tr("Средняя"), hard: tr("Хард · 1 HP") }).setValue(s.difficulty).onChange((v) => {
       s.difficulty = v;
       this.plugin.applySettings();
@@ -4161,14 +4415,31 @@ var ShardsSettingTab = class extends import_obsidian.PluginSettingTab {
       s.resolution = Number(v);
       this.plugin.applySettings();
     }));
-    new import_obsidian.Setting(containerEl).setName(tr("Имена заметок из хранилища")).setDesc(tr("Названия открытых заметок используются в именах Сирот и Дубликатов и на надгробиях. Исключите нужные папки ниже.")).addToggle((t) => t.setValue(s.useNoteNames).onChange((v) => {
+    new import_obsidian.Setting(containerEl).setName(tr("Имена заметок из хранилища")).setDesc(tr("Индексируются названия Markdown-заметок; содержимое не читается. Папки можно включить или исключить ниже.")).addToggle((t) => t.setValue(s.useNoteNames).onChange((v) => {
       s.useNoteNames = v;
       this.plugin.applySettings();
+      this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName(tr("Исключить папки из имён в игре")).setDesc(tr("Укажите пути папок относительно хранилища, по одному на строку. Вложенные папки тоже исключаются.")).addTextArea((t) => t.setPlaceholder(tr("Одна папка на строку")).setValue(s.excludedFolders.join("\n")).onChange((v) => {
-      s.excludedFolders = normalizeExcludedFolders(v.split("\n"));
-      this.plugin.applySettings();
-    }));
+    let indexStatus;
+    const updateIndexStatus = () => {
+      if (!indexStatus) return;
+      if (!s.useNoteNames) { indexStatus.setDesc(tr("Имена заметок выключены.")); return; }
+      const count = this.plugin.noteEntries().length;
+      indexStatus.setDesc(count ? tr`Доступно заметок: ${count}` : tr("Подходящих заметок нет — используются стандартные имена."));
+    };
+    new import_obsidian.Setting(containerEl).setName(tr("Только из выбранных папок")).setDesc(tr("Оставьте пустым для всего хранилища. Вложенные папки включаются."))
+      .addTextArea((t) => t.setPlaceholder(tr("Одна папка на строку")).setValue(s.includedFolders.join("\n")).onChange((v) => {
+        s.includedFolders = normalizeExcludedFolders(v.split("\n")); this.plugin.applySettings(); updateIndexStatus();
+      })).addButton((b) => b.setButtonText(tr("Выбрать папки")).onClick(() => this.chooseFolders("includedFolders")));
+    new import_obsidian.Setting(containerEl).setName(tr("Исключить папки из имён в игре")).setDesc(tr("Исключения действуют также внутри выбранных папок и их подпапок."))
+      .addTextArea((t) => t.setPlaceholder(tr("Одна папка на строку")).setValue(s.excludedFolders.join("\n")).onChange((v) => {
+        s.excludedFolders = normalizeExcludedFolders(v.split("\n")); this.plugin.applySettings(); updateIndexStatus();
+      })).addButton((b) => b.setButtonText(tr("Выбрать папки")).onClick(() => this.chooseFolders("excludedFolders")));
+    indexStatus = new import_obsidian.Setting(containerEl).setName(tr("Индексация заметок"))
+      .addButton((b) => b.setButtonText(tr("Обновить индекс")).onClick(() => {
+        this.plugin.invalidateNoteIndex(false); this.plugin.applySettings(); this.display();
+      }));
+    updateIndexStatus();
     new import_obsidian.Setting(containerEl).setName(tr("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C FPS")).addToggle((t) => t.setValue(s.showFps).onChange((v) => {
       s.showFps = v;
       this.plugin.applySettings();

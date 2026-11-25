@@ -94,3 +94,35 @@
 .vs-records { width: 100%; border-collapse: collapse; color: #ede4ff; font-size: 13px; }
 .vs-records th, .vs-records td { padding: 8px 5px; text-align: left; border-bottom: 1px solid rgba(168, 85, 247, .22); }
 .vs-records th { color: #c4b5fd; }
+
+/* Sound controls, kill feed, and local note log */
+.vs-range-control { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+.vs-range-control input[type=range] { width: 160px; }
+.vs-range-control input.vs-range-number { width: 70px; min-width: 60px; padding: 4px 6px; text-align: right; }
+.vs-range-suffix { color: #c4b5fd; }
+.vs-settings-number { width: 90px; }
+.vs-kill-feed { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); width: min(700px, 75%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; z-index: 4; }
+.vs-kill-feed-item { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 7px 12px; background: rgba(12, 5, 22, .86); border: 1px solid rgba(168, 85, 247, .5); border-radius: 6px; color: #ede4ff; font-size: 13px; }
+.vs-kill-feed-player { color: #e9d5ff; font-weight: bold; }
+.vs-kill-feed-enemy { color: #fda4af; }
+.vs-overlay.vs-show ~ .vs-kill-feed { display: none; }
+.vs-kill-log { display: grid; gap: 5px; }
+.vs-kill-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; padding: 7px 10px; border-radius: 6px; background: rgba(0, 0, 0, .25); font-size: 13px; }
+.vs-kill-time { color: #a78bfa; font-variant-numeric: tabular-nums; }
+.vs-kill-player { color: #e9d5ff; font-weight: bold; }
+.vs-kill-type { color: #fda4af; }
+.vs-kill-note { overflow-wrap: anywhere; text-align: left; }
+.vs-folder-search { width: 100%; margin-bottom: 10px; }
+.vs-folder-list { max-height: 45vh; overflow-y: auto; display: grid; gap: 4px; }
+.vs-folder-option { display: flex; align-items: center; gap: 8px; padding: 4px; overflow-wrap: anywhere; }
+.vs-folder-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* Keep game controls readable under Obsidian's light and dark themes. */
+.vs-panel button.vs-tab { background: transparent; color: #c4b5fd; border: 1px solid transparent; box-shadow: none; }
+.vs-panel button.vs-tab:hover { color: #fff; border-color: rgba(168, 85, 247, .5); }
+.vs-panel button.vs-tab.vs-active { background: rgba(124, 58, 237, .35); color: #fff; border-color: #a855f7; }
+.vs-panel button.vs-btn { background: rgba(76, 29, 149, .45); color: #f3e8ff; border: 1px solid rgba(168, 85, 247, .6); box-shadow: none; height: auto; }
+.vs-panel button.vs-btn:hover { background: rgba(124, 58, 237, .6); box-shadow: 0 0 14px rgba(168, 85, 247, .5); }
+.vs-panel button.vs-btn.vs-primary { background: linear-gradient(180deg, #8b5cf6, #6d28d9); border-color: #c4b5fd; }
+.vs-panel button.vs-btn.vs-danger { background: rgba(190, 18, 60, .6); border-color: #fb7185; }
+.vs-panel button.vs-link { background: transparent; border: 0; border-bottom: 1px dotted currentColor; color: #e9d5ff; box-shadow: none; height: auto; padding: 0; }

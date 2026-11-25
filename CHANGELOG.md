@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- Add three original synthesized soundtracks with independent music volume.
+- Add exact numeric controls for sensitivity, sound effects, and music.
+- Add a local kill feed and kill log with links to the actual notes.
+- Index eligible Markdown notes, with included and excluded folder pickers and a refresh control.
+
 ## 1.1.1
 
 - Count only active gameplay time in OBSIGAMA, excluding pauses and menus.

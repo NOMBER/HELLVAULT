@@ -216,22 +216,29 @@ test("partial active time survives a reload and the completed run does not count
   } finally { bridge.client.destroy(); }
 });
 
-test("note names come only from open Markdown tabs and respect excluded folders", () => {
-  const open = [
-    { view: { file: { path: "Visible/Hello.md", basename: "Hello", extension: "md" } } },
-    { view: { file: { path: "Private/Nested/Secret.md", basename: "Secret", extension: "md" } } },
-    { view: { file: { path: "Visible/Image.png", basename: "Image", extension: "png" } } },
+test("note indexing covers the vault and applies include and exclude folders without reading content", () => {
+  const files = [
+    { path: "Visible/Hello.md", basename: "Hello" },
+    { path: "Visible/Deep/World.md", basename: "World" },
+    { path: "Visible/Private/Secret.md", basename: "Secret" },
+    { path: "Other/Hello.md", basename: "Hello" },
+    ...Array.from({ length: 450 }, (_, i) => ({ path: `Bulk/${i}.md`, basename: `${i}` })),
   ];
-  const plugin = {
-    data: { settings: { useNoteNames: true, excludedFolders: ["Private"] } },
-    app: {
-      vault: new Proxy({}, { get() { throw new Error("Vault enumeration is not allowed"); } }),
-      workspace: { getLeavesOfType(type) { assert.equal(type, "markdown"); return open; }, getActiveFile() { return open[0].view.file; } },
-    },
-  };
-  assert.deepEqual(Array.from(context.VaultShardsPlugin.prototype.noteNames.call(plugin)), ["Hello"]);
+  let scans = 0;
+  const plugin = Object.create(context.VaultShardsPlugin.prototype);
+  plugin.data = { settings: { useNoteNames: true, includedFolders: [], excludedFolders: ["Visible/Private"] } };
+  plugin.app = { vault: { getMarkdownFiles() { scans++; return files; }, read() { throw new Error("Note contents must not be read"); } } };
+  assert.equal(plugin.noteEntries().length, 453, "the entire allowed vault is indexed, without the old 400-note limit");
+  assert.equal(plugin.noteEntries().filter((note) => note.name === "Hello").length, 2, "duplicate titles keep their separate paths");
+  assert.equal(scans, 1, "the index is cached");
+  plugin.data.settings.includedFolders = ["Visible"];
+  assert.deepEqual(Array.from(plugin.noteEntries(), (note) => note.path), ["Visible/Hello.md", "Visible/Deep/World.md"]);
+  assert.equal(scans, 1, "changing filters does not rescan the vault");
+  plugin.invalidateNoteIndex(false);
+  plugin.noteEntries();
+  assert.equal(scans, 2, "manual refresh rescans");
   plugin.data.settings.useNoteNames = false;
-  assert.deepEqual(Array.from(context.VaultShardsPlugin.prototype.noteNames.call(plugin)), []);
+  assert.deepEqual(Array.from(plugin.noteEntries()), []);
 });
 
 test("resetting game progress keeps active playtime already earned", async () => {
@@ -244,4 +251,47 @@ test("resetting game progress keeps active playtime already earned", async () =>
     assert.equal(bridge.client.getStats().playtime_ms, 3250);
     assert.equal(bridge.client.getStats().runs, undefined);
   } finally { bridge.client.destroy(); }
+});
+
+test("a real note is used without mixing in fictional names, and kills retain their note path locally", () => {
+  const data = context.mergeData(null);
+  const game = {
+    data, mode: "story", run: { time: 10 }, enemies: [], decor: [], art: null,
+    opts: { getNoteEntries: () => [{ name: "A real note", path: "Research/A real note.md" }], getPlayerName: () => "@keeper", onSave() {} },
+    assignEnemyNote: context.Game.prototype.assignEnemyNote,
+  };
+  context.Game.prototype.refreshNames.call(game);
+  assert.deepEqual(Array.from(game.names), ["A real note"]);
+  const enemy = { type: "glitch" };
+  game.assignEnemyNote(enemy, game.noteEntries[0]);
+  assert.equal(enemy.notePath, "Research/A real note.md");
+  context.Game.prototype.recordKill.call(game, enemy);
+  assert.equal(data.progress.killLog[0].player, "@keeper");
+  assert.equal(data.progress.killLog[0].noteName, "A real note");
+  assert.equal(data.progress.killLog[0].notePath, "Research/A real note.md");
+  const exported = context.HELLVAULT_OBSIGAMA.HellvaultObsigama.totals(data);
+  assert.equal(JSON.stringify(exported).includes("A real note"), false, "note titles and paths must not enter OBSIGAMA totals");
+});
+
+test("muted legacy saves stay muted and new settings preserve the old progress", () => {
+  const data = context.mergeData({ settings: { sound: false, volume: 0.4, excludedFolders: ["Private"] }, progress: { stats: { kills: 8 } } });
+  assert.equal(data.settings.music, false);
+  assert.equal(data.settings.volume, 0.4);
+  assert.equal(data.settings.musicVolume, 0.35);
+  assert.equal(data.progress.stats.kills, 8);
+  assert.deepEqual(Array.from(data.settings.excludedFolders), ["Private"]);
+  assert.deepEqual(Array.from(data.settings.includedFolders), []);
+  assert.deepEqual(Array.from(data.progress.killLog), []);
+});
+
+test("each mode has its own multi-bar soundtrack with a distinct tempo and melody", () => {
+  const tracks = context.HELLVAULT_TRACKS;
+  assert.deepEqual(Object.keys(tracks).sort(), ["arena", "linear", "story"]);
+  assert.equal(new Set(Object.values(tracks).map((track) => track.bpm)).size, 3);
+  assert.equal(new Set(Object.values(tracks).map((track) => JSON.stringify(track.lead))).size, 3);
+  for (const track of Object.values(tracks)) {
+    assert.ok(track.roots.length >= 16);
+    assert.equal(track.bass.length, 16);
+    assert.equal(track.lead.length, 16);
+  }
 });

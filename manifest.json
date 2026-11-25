@@ -1,7 +1,7 @@
 {
   "id": "vault-shards",
   "name": "Hellvault",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "minAppVersion": "1.4.0",
   "description": "A Doom-like shooter with a story campaign, linear path, and endless arena.",
   "author": "Хранитель",
